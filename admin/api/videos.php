@@ -61,12 +61,34 @@ switch ($action) {
 
         $errCode = $_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE;
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-            $msg = 'Файл не загружен: ' . upload_err_message((int)$errCode);
-            admin_log('upload_failed', ['post_keys' => array_keys($_POST), 'files_keys' => array_keys($_FILES),
-                'content_length' => $_SERVER['CONTENT_LENGTH'] ?? null,
+            // Диагностика типичной проблемы: POST-запрос пришёл без multipart-тела.
+            // Наиболее частые причины: запрос отправлен без FormData (например, JSON/fetch с телом-строкой),
+            // превышены лимиты php.ini upload_max_filesize/post_max_size или включено ограничение extension.
+            $ct = strtolower((string)($_SERVER['CONTENT_TYPE'] ?? ''));
+            $isMultipart = str_contains($ct, 'multipart/form-data');
+            $bytesRecv = 0;
+            if (isset($_SERVER['CONTENT_LENGTH'])) {
+                $bytesRecv = (int)$_SERVER['CONTENT_LENGTH'];
+            }
+
+            $diag = [
+                'post_keys'      => array_keys($_POST),
+                'files_keys'     => array_keys($_FILES),
+                'content_type'   => $ct,
+                'is_multipart'   => $isMultipart,
+                'content_length' => $bytesRecv,
                 'php_upload_max' => (string)ini_get('upload_max_filesize'),
-                'php_post_max' => (string)ini_get('post_max_size'),
-                'error_code' => (int)$errCode]);
+                'php_post_max'   => (string)ini_get('post_max_size'),
+                'error_code'     => (int)$errCode,
+            ];
+            admin_log('upload_failed', $diag);
+
+            $msg = 'Файл не загружен: ' . upload_err_message((int)$errCode);
+            if (!$isMultipart && $errCode === UPLOAD_ERR_NO_FILE) {
+                $msg .= '. Ожидается multipart/form-data с полем "file". Проверьте, что в JavaScript для отправки используется FormData.';
+            } elseif ($errCode === UPLOAD_ERR_INI_SIZE) {
+                $msg .= sprintf('. Превышен upload_max_filesize=%s или post_max_size=%s на сервере.', ini_get('upload_max_filesize'), ini_get('post_max_size'));
+            }
             json_error($msg, 400);
         }
         $tmp   = $_FILES['file']['tmp_name'];
