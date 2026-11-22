@@ -50,6 +50,7 @@ data/                — «база данных» (JSON, всё в git)
   videos.json        — список роликов (см. модель ниже)
   specials.json      — {tech_periods:[...], weekday_sanitary:{enabled,weekday}}
   users.json         — [{login, passhash(argon2id), role, created}]
+  settings.json      — настройки конвертера (создаётся при первом сохранении из админки; по умолчанию берётся из convert_defaults config.php)
   queue.json(+.bak)  — служебные файлы очереди/состояния
   logs/admin-YYYY-MM-DD.log — журнал действий админов (JSON Lines)
   state/             — state_<IP>.serialize — состояние чередования по IP (формат serialize([mainIdx, wasAdditional]), совместим со старым)
