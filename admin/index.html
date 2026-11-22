@@ -45,6 +45,8 @@
   .ord-num { display:inline-block; min-width:1.4rem; font-weight:600; color:#2b7de0; }
   .ord-grip { color:#9aa5b1; }
   button.mini { background:#eef2f7; color:#333; border:1px solid #ccd3dd; padding:0 .35rem; font-size:.75rem; border-radius:4px; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  .unsaved-mark { color:#dc3545; font-weight:700; }
 </style>
 </head>
 <body>
@@ -263,6 +265,7 @@
 <script>
 "use strict";
 var CSRF = "", ME = "", ROLE = "editor", videosCache = [], specialsCache = null;
+var dirtyRows = {}; // id строк с несохранёнными изменениями (объявлено до первого использования)
 
 function $(id){ return document.getElementById(id); }
 function toast(msg){ var t=$("toast"); t.textContent=msg; t.style.display="block"; setTimeout(function(){t.style.display="none";},4000); }
@@ -410,6 +413,7 @@ function refreshStatuses(){
   }).catch(function(){ /* сервер недоступен — попробуем на следующем тике */ });
 }
 function renderVideos(){
+  var keepDirty = {}; for (var k in dirtyRows) keepDirty[k] = true; // не сбрасываем «несохранено» при фоновом обновлении списка
   var f = ($("v_filter").value||"").toLowerCase();
   var onlyActive = $("v_only_active").checked;
   var onlyInactive = $("v_only_inactive").checked;
@@ -442,18 +446,38 @@ function renderVideos(){
         + " <button class='mini' onclick='moveMain(\""+v.id+"\",1)' title='Ниже'>▼</button></td>"
       : "<td class='muted'>—</td>";
     return "<tr>"+numCell+
-      "<td><input value=\""+esc(v.title)+"\" data-id=\""+v.id+"\" class=\"t-in\"></td>"+
+      "<td><input value=\""+esc(v.title)+"\" data-id=\""+v.id+"\" class=\"t-in\" oninput=\"markDirty(this)\" onchange=\"markDirty(this)\"></td>"+
       "<td>"+esc(v.file)+"</td>"+
-      "<td><select data-id=\""+v.id+"\" class=\"type-sel\"><option value=\"main\""+(v.type==="main"?" selected":"")+">Основной</option><option value=\"additional\""+(v.type==="additional"?" selected":"")+">Доп.</option><option value=\"splash\""+(v.type==="splash"?" selected":"")+">Заставка</option></select>"+
+      "<td><select data-id=\""+v.id+"\" class=\"type-sel\" onchange=\"markDirty(this)\"><option value=\"main\""+(v.type==="main"?" selected":"")+">Основной</option><option value=\"additional\""+(v.type==="additional"?" selected":"")+">Доп.</option><option value=\"splash\""+(v.type==="splash"?" selected":"")+">Заставка</option></select>"+
         (v.splash_role?" <span class='muted'>"+(v.splash_role==="splash_weekday"?"сан. день":"техзакрытие")+"</span>":"")+"</td>"+
       "<td><span class='badge b-"+v.status+"'>"+v.status+"</span>"+(v.error?" <span class='muted'>"+esc(v.error)+"</span>":"")+"</td>"+
       "<td>"+fmtDur(v.duration)+"</td>"+
       "<td>"+(nPer? "<span class='badge "+(isActiveNow(v)?"b-active'>активен</span>":"b-inactive'>не активен</span>") : "<span class='badge b-inactive'>нет периодов</span>")+" <ul class='per-list'>"+per+"</ul>"+
         " <button class='small secondary' onclick=\"openSched('"+v.id+"')\">"+(nPer?"Изменить периоды":"＋ Периоды")+"</button></td>"+
-      "<td><button class='secondary small' onclick=\"saveVideoById('"+v.id+"')\">Сохранить</button> <button class='danger small' onclick=\"delVideo('"+v.id+"')\">✕</button></td>"+
+      "<td><button class='secondary small save-btn' data-id=\""+v.id+"\" disabled onclick=\"saveVideoById('"+v.id+"')\">Сохранить</button> <span class='unsaved-mark' data-id=\""+v.id+"\" hidden title=\"Есть несохранённые изменения\">●</span> <button class='danger small' onclick=\"delVideo('"+v.id+"')\">✕</button></td>"+
     "</tr>";
   }).join("");
   bindOrderDnd();
+  Object.keys(keepDirty).forEach(function(id){ setRowDirty(id,true); });
+}
+// ---------- «грязные» строки: кнопка Сохранить активна только при изменениях ----------
+function markDirty(el){
+  var tr = el.closest ? el.closest('tr') : null;
+  if (!tr) return;
+  var inp = tr.querySelector('.t-in'), sel = tr.querySelector('.type-sel');
+  if (!inp || !sel) return;
+  var v = videosCache.filter(function(x){return String(x.id)===String(inp.getAttribute('data-id'));})[0];
+  if (!v) return;
+  var changed = (inp.value !== v.title) || (sel.value !== v.type);
+  setRowDirty(v.id, changed);
+}
+function setRowDirty(id, on){
+  id = String(id);
+  if (on) dirtyRows[id] = true; else delete dirtyRows[id];
+  var btn = document.querySelector(".save-btn[data-id='"+id+"']");
+  if (btn) btn.disabled = !on;
+  var mk = document.querySelector(".unsaved-mark[data-id='"+id+"']");
+  if (mk) mk.hidden = !on;
 }
 // ---------- порядок показа основных роликов ----------
 var dragMainId = null;
@@ -502,9 +526,12 @@ function bindOrderDnd(){
 function saveVideoById(id){
   var titleInp = document.querySelector('.t-in[data-id="'+id+'"]');
   var typeSel  = document.querySelector('.type-sel[data-id="'+id+'"]');
-  api("api/videos.php?action=update", {method:"POST", body: JSON.stringify({id:id, title:titleInp.value, type:typeSel.value})})
+  if (!titleInp || !typeSel) return;
+  var payload = {id:id, title:titleInp.value, type:typeSel.value};
+  setRowDirty(id,false); // изменения отправлены — снимаем метку до перезагрузки списка
+  api("api/videos.php?action=update", {method:"POST", body: JSON.stringify(payload)})
     .then(function(){ toast("Сохранено"); loadVideos(); })
-    .catch(function(e){toast(e.message);});
+    .catch(function(e){ setRowDirty(id,true); toast(e.message); });
 }
 function delVideo(id){
   if(!confirm("Удалить ролик и файл?")) return;

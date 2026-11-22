@@ -19,9 +19,9 @@
 ```
 index.html          — страница плеера для ТВ (НЕ менять без необходимости)
 playlist.php        — API плейлиста для ТВ (JSON: Playlist[], SanitaryDay, GeneralWatchdog, maintenance, maintenancepicture)
-image.php           — заглушка (бывший Oracle-код удалён; формат ответа сохранён)
+image.php           — информер посетителей для index.html (обращается ТВ-плеер)
 css/, favicon.ico   — ассеты плеера
-s_day.jpg, tech03042023.jpg — легаси-картинки заставок (заменены видео-заставками, оставлены для старых ссылок)
+s_day.jpg, tech03042023.jpg — картинки, на которые ссылается index.html плеера (НЕ УДАЛЯТЬ без изменения index.html)
 
 admin/index.html    — SPA админки (вкладки: Ролики и расписание, Особые дни, Плейлист сейчас, Настройки, Пользователи, Журнал)
 admin/api/
@@ -44,7 +44,6 @@ src/
 
 bin/
   worker.php         — воркер очереди конвертации (запуск из cron, файловая блокировка от параллельного запуска)
-  migrate_v3.php     — миграция модели данных v2 → v3 (одноразовая, выполнена)
 
 data/                — «база данных» (JSON, всё в git)
   videos.json        — список роликов (см. модель ниже)
@@ -54,7 +53,7 @@ data/                — «база данных» (JSON, всё в git)
   queue.json(+.bak)  — служебные файлы очереди/состояния
   logs/admin-YYYY-MM-DD.log — журнал действий админов (JSON Lines)
   state/             — state_<IP>.serialize — состояние чередования по IP (формат serialize([mainIdx, wasAdditional]), совместим со старым)
-  *.v2.json, *.bak   — остатки миграций (можно удалить после стабилизации)
+*.bak              — резервные копии store_write (в .gitignore)
 
 media/               — готовые mp4 (отдаются ТВ напрямую)
 uploads/             — исходники загруженных файлов до конвертации (удаляются воркером)
@@ -143,6 +142,7 @@ API при провале пишет в журнал деталей: content_typ
 - Механизм: httpOnly-сессии PHP, CSRF-токены во всех POST, rate-limiting попыток входа, логирование login/logout/failed_login.
 
 ## 7. Логирование действий администраторов
+- **Кнопка «Сохранить» в строке ролика активна только при наличии несохранённых изменений** (dirty-check по полям title/type); рядом появляется красная метка ●; состояние сохраняется при фоновом обновлении списка (polling статусов конвертации).
 
 `src/util.php::admin_log($action, $details)` → `data/logs/admin-YYYY-MM-DD.log` (JSON Lines: ts, user, ip, action, details, при изменениях — до/после).
 Экшены: login, logout, failed_login, video_add/upload, upload_failed, video_update, video_delete, period-add/update/delete, rename-file, replace, tech-save/tech-delete, weekday-period-save/delete, weekday-set, settings_save, user_add/user_delete/set-password/set-role.
@@ -158,7 +158,8 @@ API при провале пишет в журнал деталей: content_typ
 
 - **v1** (исходная): единый файл playlist_new.json с глобальным расписанием; мигрировано при старте разработки (39 роликов, 45 периодов, 7 техзакрытий). Файлы v1 удалены из git.
 - **v2**: расписание перенесено НА РОЛИК (videos.json[].schedule), тип один у ролика; specials.json хранил tech_periods, sanitary_dates, weekday_periods. Миграция bin/migrate_v2.php (выполнена, скрипт удалён). Бэкапы videos.v2.json/specials.v2.json пока в data/ (можно удалить).
-- **v3 (текущая)**: заставки стали роликами type=splash (splash_role=splash_weekday|splash_tech); блок произвольных санитарных дат удалён (заменяется периодом техзакрытия на 1 день с нужным роликом); картинка у техзакрытия убрана — только видео; bin/migrate_v3.php (выполнен).
+- **Очистка репозитория (2026-11-23)**: удалены неиспользуемые файлы — bin/migrate_v3.php (миграция выполнена), data/*.v2.json (бэкапы v2), css/style_n.css и css/datepicker.css (не подключаются), media/*.mp4 не используемые в videos.json (4 файла). В .gitignore добавлен data/logs/. Каталоги tmp/, uploads/, public_previews/, cache/ сохранены через .gitkeep.
+- **v3 (текущая)**: заставки стали роликами type=splash (splash_role=splash_weekday|splash_tech); блок произвольных санитарных дат удалён (заменяется периодом техзакрытия на 1 день с нужным роликом); картинка у техзакрытия убрана — только видео; bin/migrate_v3.php (выполнен, скрипт удалён).
 - Даты периодов нормализуются с точностью до дня (UI: date-input без времени; 00:00–23:59).
 
 ## 10. Git / GitHub — рабочее состояние
@@ -172,7 +173,7 @@ API при провале пишет в журнал деталей: content_typ
 ## 11. Известные проблемы и TODO
 
 - Проверить на живом Apache: загрузка >128 МБ после поднятия лимитов PHP (ждём подтверждения пользователя).
-- Удалить остатки миграций: data/*.v2.json, *.bak — после стабилизации.
+- ~~Удалить остатки миграций: data/*.v2.json, migrate_v3.php~~ — выполнено 2026-11-23.
 - Превью-кадры роликов в библиотеке — не реализовано.
 - Ролевой доступ тоньше (editor без «Настроек») — частично.
 - logrotate для data/logs — не настроен.

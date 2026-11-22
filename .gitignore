@@ -5,3 +5,4 @@ data/*.bak
 
 # Локальная конфигурация (не коммитить)
 src/config.php
+data/logs/
