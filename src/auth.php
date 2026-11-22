@@ -62,6 +62,16 @@ class Auth
         return $_SESSION['admin_user'] ?? null;
     }
 
+    /** Сменить пароль пользователю (массив пользователей передаётся по ссылке). */
+    public static function setPassword(array &$users, int $index, string $newPassword): void
+    {
+        if (strlen($newPassword) < 8) {
+            throw new RuntimeException('Пароль слишком короткий (минимум 8 символов)');
+        }
+        $users[$index]['passhash'] = password_hash($newPassword, PASSWORD_ARGON2ID);
+        $users[$index]['pass_changed'] = date('c');
+    }
+
     /** Создать пользователя через CLI: php src/auth.php add login password [role] */
     public static function addUser(string $login, string $password, string $role = 'admin'): void
     {
@@ -70,6 +80,12 @@ class Auth
             if ($u['login'] === $login) {
                 throw new RuntimeException("User $login already exists");
             }
+        }
+        if (!preg_match('/^[A-Za-z0-9._-]{3,32}$/', $login)) {
+            throw new RuntimeException('Логин: 3–32 символа, латиница/цифры/._-');
+        }
+        if (!in_array($role, ['admin', 'editor'], true)) {
+            throw new RuntimeException('Роль должна быть admin или editor');
         }
         if (strlen($password) < 8) {
             throw new RuntimeException("Password too short (min 8 chars)");

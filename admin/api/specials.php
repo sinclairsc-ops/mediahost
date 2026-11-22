@@ -9,9 +9,10 @@ function specials(): array
 {
     $s = store_read('specials.json');
     return $s + [
-        'tech_periods'    => [],
-        'sanitary_dates'  => [],
-        'weekday_sanitary'=> ['enabled' => true, 'weekday' => 1],
+        'tech_periods'     => [],
+        'sanitary_dates'   => [],
+        'weekday_periods'  => [],
+        'weekday_sanitary' => ['enabled' => true, 'weekday' => 1],
     ];
 }
 
@@ -117,6 +118,60 @@ switch ($action) {
         store_write('specials.json', $s);
         admin_log('weekday_sanitary_set', $s['weekday_sanitary']);
         json_out(['ok' => true, 'weekday_sanitary' => $s['weekday_sanitary']]);
+        break;
+
+    // ---- периоды действия санитарных дней по дню недели ----
+    case 'weekday-period-save':   // создать или обновить период {id?,start,end}
+        require_auth();
+        require_post();
+        require_csrf();
+        $d = request_json();
+        $start = valid_dt((string)($d['start'] ?? ''));
+        $end   = valid_dt((string)($d['end'] ?? ''));
+        if (!$start || !$end) {
+            json_error('Неверный формат дат. Ожидается "ГГГГ-ММ-ДД ЧЧ:ММ"');
+        }
+        if (strlen((string)$d['end']) === 10) {
+            $end = date('Y-m-d', strtotime($end . ' +1 day')) . ' 00:00';
+        }
+        if ($start >= $end) {
+            json_error('Дата окончания должна быть позже даты начала');
+        }
+        $s = specials();
+        $item = ['id' => (string)($d['id'] ?? new_id()), 'start' => $start, 'end' => $end];
+        $replaced = false;
+        foreach ($s['weekday_periods'] as $i => $wp) {
+            if ($wp['id'] === $item['id']) {
+                admin_log('sanitary_weekday_period_update', ['from' => $wp, 'to' => $item]);
+                $s['weekday_periods'][$i] = $item;
+                $replaced = true;
+            }
+        }
+        if (!$replaced) {
+            $s['weekday_periods'][] = $item;
+            admin_log('sanitary_weekday_period_create', $item);
+        }
+        usort($s['weekday_periods'], fn($a, $b) => strcmp($a['start'], $b['start']));
+        store_write('specials.json', $s);
+        json_out(['ok' => true, 'item' => $item]);
+        break;
+
+    case 'weekday-period-delete':
+        require_auth();
+        require_post();
+        require_csrf();
+        $id = (string)(request_json()['id'] ?? '');
+        $s = specials();
+        $removed = null;
+        foreach ($s['weekday_periods'] as $wp) {
+            if ($wp['id'] === $id) {
+                $removed = $wp;
+            }
+        }
+        $s['weekday_periods'] = array_values(array_filter($s['weekday_periods'], fn($wp) => $wp['id'] !== $id));
+        store_write('specials.json', $s);
+        admin_log('sanitary_weekday_period_delete', $removed ?? ['id' => $id]);
+        json_out(['ok' => true]);
         break;
 
     default:
