@@ -37,6 +37,9 @@
   ol.playlist > li .pl-meta { color: #6c757d; font-size: .82rem; }
   .per-list { margin: 0; padding-left: 1.2rem; }
   .per-list li { margin-bottom: .3rem; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .6rem; margin-bottom: .6rem; }
+  .grid2 label { font-size: .85rem; color: #495057; }
+  .grid2 input, .grid2 select { width: 100%; box-sizing: border-box; }
 </style>
 </head>
 <body>
@@ -59,6 +62,7 @@
     <a data-tab="playlist" onclick="showTab('playlist')">Плейлист сейчас</a>
     <a data-tab="videos" onclick="showTab('videos')">Ролики и расписание</a>
     <a data-tab="specials" onclick="showTab('specials')">Особые дни</a>
+    <a data-tab="settings" id="tablink-settings" onclick="showTab('settings')" hidden>Настройки</a>
     <a data-tab="users" id="tablink-users" onclick="showTab('users')" hidden>Пользователи</a>
     <a data-tab="logs" onclick="showTab('logs')">Журнал</a>
     <span style="margin-left:auto"></span>
@@ -87,14 +91,14 @@
       <div class="card">
         <h4>Загрузка нового ролика</h4>
         <div class="row">
-          <input type="file" id="v_file" accept="video/*,.mp4,.mkv,.mov,.avi,.webm,image/*">
+          <input type="file" id="v_file" accept="video/*,.mp4,.mkv,.mov,.avi,.webm,image/*" onchange="onUploadFilePick()">
           <input id="v_title" placeholder="Название ролика (для имени файла)">
           <select id="v_type"><option value="main">Основной</option><option value="additional">Дополнительный</option></select>
-          <select id="v_preset"></select>
-          <label>Длительность из картинки, с <input id="v_duration" type="number" value="60" min="3" max="600" style="width:5rem"></label>
+          <label id="v_duration_wrap" hidden>Длительность видео из картинки, с
+            <input id="v_duration" type="number" value="60" min="3" max="3600" style="width:5rem"></label>
           <button onclick="uploadVideo()">Загрузить и конвертировать</button>
         </div>
-        <div class="muted">Имя файла формируется транслитерацией названия. Конвертация выполняется на сервере (ffmpeg), статус виден в таблице. Периоды показа назначаются в карточке ролика после загрузки.</div>
+        <div class="muted" id="v_upload_hint">Все файлы конвертируются в mp4. Имя файла формируется транслитерацией названия. Конвертация выполняется на сервере (ffmpeg), статус виден в таблице. Периоды показа назначаются в карточке ролика после загрузки.</div>
       </div>
       <div class="card">
         <h4>Библиотека роликов и расписание показов</h4>
@@ -138,16 +142,48 @@
       </div>
       <div class="card">
         <h4>Периоды технического закрытия</h4>
-        <div class="row">
-          <input type="datetime-local" id="tp_start"><input type="datetime-local" id="tp_end">
-          <input id="tp_pic" placeholder="Картинка-заставка (например tech.jpg)" size="30">
-          <input id="tp_vid" placeholder="Видео-заставка (необязательно)" size="30">
-          <button onclick="saveTech()">+ Сохранить период</button>
+        <div class="row muted">Добавить период:
+          <label>с <input type="datetime-local" id="tp_start"></label>
+          <label>по <input type="datetime-local" id="tp_end"></label>
+          <button onclick="addTech()">＋ Добавить</button>
         </div>
         <table>
-          <thead><tr><th>Начало</th><th>Окончание</th><th>Картинка</th><th>Видео</th><th></th></tr></thead>
+          <thead><tr><th>Начало</th><th>Окончание</th><th>Картинка</th><th>Видео (mp4)</th><th>Заставка</th><th></th></tr></thead>
           <tbody id="tp_rows"></tbody>
         </table>
+        <div class="muted">Кнопка «💾» сохраняет даты и имена файлов периода. Кнопка «⬆» загружает файл-заставку: видео конвертируется в mp4; из изображения будет создан mp4 заданной длительности (по умолчанию 60 с). Файлы хранятся в media/.</div>
+      </div>
+    </section>
+
+    <!-- ================= НАСТРОЙКИ КОНВЕРТЕРА ================= -->
+    <section id="tab-settings" hidden>
+      <div class="card">
+        <h4>Настройки конвертера (ffmpeg)</h4>
+        <div class="grid2">
+          <label>Разрешение (-s)<br><input id="st_resolution" placeholder="1280x720"></label>
+          <label>Видеокодек (-c:v)<br><input id="st_vcodec" placeholder="libx264"></label>
+          <label>Формат пикселей (-pix_fmt)<br><input id="st_pix_fmt" placeholder="yuv420p"></label>
+          <label>Профиль (-profile:v)<br><input id="st_profile" placeholder="baseline"></label>
+          <label>Уровень (-level:v)<br><input id="st_level" placeholder="1.3"></label>
+          <label>Пресет скорости (-preset)<br>
+            <select id="st_preset_speed">
+              <option value="">—</option>
+              <option>ultrafast</option><option>superfast</option><option>veryfast</option><option>faster</option>
+              <option>fast</option><option>medium</option><option>slow</option><option>slower</option><option>veryslow</option>
+            </select></label>
+          <label>CRF (пусто = битрейт)<br><input id="st_crf" placeholder="например 23 или пусто"></label>
+          <label>Видеобитрейт (-b:v)<br><input id="st_bitrate" placeholder="2500k"></label>
+          <label>maxrate<br><input id="st_maxrate" placeholder="необязательно"></label>
+          <label>bufsize<br><input id="st_bufsize" placeholder="необязательно"></label>
+          <label>Аудиокодек (-c:a)<br><input id="st_acodec" placeholder="aac"></label>
+          <label>Аудиобитрейт (-b:a)<br><input id="st_abitrate" placeholder="128k"></label>
+          <label>Длительность ролика из изображения, с (по умолчанию при загрузке)<br><input id="st_duration_image" type="number" min="1" max="3600"></label>
+        </div>
+        <div class="row"><button onclick="saveSettings()">Сохранить настройки</button>
+          <span class="muted" id="st_php"></span></div>
+        <h5>Итоговая команда (предпросмотр)</h5>
+        <pre class="logline" id="st_prev_video"></pre>
+        <pre class="logline" id="st_prev_image"></pre>
       </div>
     </section>
 
@@ -250,6 +286,7 @@ function enterApp(user, role){
   $("loginView").hidden=true; $("appView").hidden=false;
   $("whoami").textContent = user + (ROLE==="admin"?" (админ)":" (редактор)");
   $("tablink-users").hidden = (ROLE!=="admin");
+  $("tablink-settings").hidden = (ROLE!=="admin");
   showTab("playlist");
 }
 function doLogin(){
@@ -263,7 +300,7 @@ function doLogout(){
 
 // ---------- вкладки ----------
 function showTab(name){
-  ["playlist","videos","specials","users","logs"].forEach(function(t){
+  ["playlist","videos","specials","settings","users","logs"].forEach(function(t){
     $("tab-"+t).hidden = (t!==name);
     var links=document.querySelectorAll("nav.topbar a[data-tab]");
     for (var i=0;i<links.length;i++) links[i].className = (links[i].getAttribute("data-tab")===name)?"active":"";
@@ -271,6 +308,7 @@ function showTab(name){
   if (name==="playlist") loadSequence();
   if (name==="videos") loadVideos();
   if (name==="specials") loadSpecials();
+  if (name==="settings") loadSettings();
   if (name==="users") loadUsers();
   if (name==="logs") loadLogs();
 }
@@ -359,20 +397,41 @@ function delVideo(id){
     .then(function(){ toast("Удалено"); loadVideos(); })
     .catch(function(e){toast(e.message);});
 }
+var IMAGE_EXT = ["jpg","jpeg","png","webp","bmp","gif"];
+function isImageName(n){ return IMAGE_EXT.indexOf((n||"").split(".").pop().toLowerCase())>=0; }
+function onUploadFilePick(){
+  var f = $("v_file").files[0];
+  if (!f) { $("v_duration_wrap").hidden = true; return; }
+  if (isImageName(f.name)) {
+    // загружено изображение — спрашиваем, в видео какой длительности его конвертировать
+    $("v_duration_wrap").hidden = false;
+    fetch("api/settings.php?action=get", {credentials:"same-origin"}).then(function(r){return r.json();}).then(function(d){
+      if (d && d.settings && d.settings.duration_image) $("v_duration").value = d.settings.duration_image;
+    }).catch(function(){});
+    $("v_upload_hint").textContent = "Выбрано изображение \u201c"+f.name+"\u201d. Укажите длительность будущего mp4-ролика и нажмите «Загрузить и конвертировать».";
+  } else {
+    $("v_duration_wrap").hidden = true;
+    $("v_upload_hint").textContent = "Файл \u201c"+f.name+"\u201d будет сконвертирован в mp4 с текущими настройками конвертера.";
+  }
+}
 function uploadVideo(){
   var f = $("v_file").files[0];
-  if (!f) { toast("Выберите файл"); return; }
+  if (!f) { toast("Сначала выберите файл (видео или изображение)"); return; }
   var fd = new FormData();
-  fd.append("file", f);
+  fd.append("file", f, f.name);
   fd.append("title", $("v_title").value || f.name.replace(/\.[^.]+$/,""));
   fd.append("type", $("v_type").value);
-  fd.append("preset", $("v_preset").value || "tv720");
-  fd.append("duration", $("v_duration").value);
+  if (isImageName(f.name)) fd.append("duration", $("v_duration").value || "60");
   fetch("api/videos.php?action=upload", {method:"POST", headers:{"X-CSRF-Token":CSRF}, body:fd, credentials:"same-origin"})
-    .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error);return j;});})
-    .then(function(){ toast("Загружено, конвертация в очереди…"); loadVideos(); setTimeout(loadVideos, 10000); })
-    .catch(function(e){toast(e.message);});
+    .then(function(r){return r.text().then(function(t){
+      var j=null; try{ j=JSON.parse(t); }catch(e){}
+      if (!r.ok) throw new Error(j && j.error ? j.error : ("Ошибка сервера "+r.status+": "+t.slice(0,200)));
+      return j;
+    });})
+    .then(function(){ toast("Загружено, конвертация в mp4 в очереди…"); $("v_file").value=""; loadVideos(); setTimeout(loadVideos, 10000); })
+    .catch(function(e){ admin_log_js("upload_error", e.message); toast(e.message); });
 }
+function admin_log_js(action,msg){ /* клиентские ошибки тоже видны в консоли */ console.error("[admin]", action, msg); }
 
 // --- диалог периодов ролика ---
 var schedVideoId = null;
@@ -433,10 +492,97 @@ function loadSpecials(){
       return "<div class='row'>"+esc(d.date)+" <button class='danger small' onclick=\"delSanitary('"+d.id+"')\">✕</button></div>";
     }).join("") || "<i>нет</i>";
     $("tp_rows").innerHTML = (s.tech_periods||[]).map(function(t){
-      return "<tr><td>"+esc(t.start)+"</td><td>"+esc(t.end)+"</td><td>"+esc(t.picture||"")+"</td><td>"+esc(t.video||"")+"</td>"+
-        "<td><button class='danger small' onclick=\"delTech('"+t.id+"')\">✕</button></td></tr>";
-    }).join("");
+      return "<tr>"+
+        "<td><input type='datetime-local' class='tp-start' data-id='"+t.id+"' value='"+(t.start||"").replace(" ","T")+"'></td>"+
+        "<td><input type='datetime-local' class='tp-end' data-id='"+t.id+"' value='"+(t.end||"").replace(" ","T")+"'></td>"+
+        "<td><input class='tp-pic' data-id='"+t.id+"' size='16' value='"+esc(t.picture||"")+"' placeholder='tech.jpg'></td>"+
+        "<td><input class='tp-vid' data-id='"+t.id+"' size='16' value='"+esc(t.video||"")+"' placeholder='tech.mp4'></td>"+
+        "<td><span class='muted'>"+esc(t.splash_status||"")+"</span> <input type='file' class='tp-file' data-id='"+t.id+"' style='max-width:200px' accept='video/*,image/*'>"+
+        " <button class='small secondary' title='Загрузить заставку (конвертируется в mp4)' onclick=\"uploadTechFile('"+t.id+"')\">⬆</button></td>"+
+        "<td><button class='small' title='Сохранить период' onclick=\"saveTechRow('"+t.id+"')\">💾</button> "+
+        "<button class='danger small' onclick=\"delTech('"+t.id+"')\">✕</button></td></tr>";
+    }).join("") || "<tr><td colspan='6' class='muted'>Периодов техзакрытия нет</td></tr>";
   });
+}
+function addTech(){
+  var s=$("tp_start").value, e=$("tp_end").value;
+  if (!s||!e) { toast("Укажите начало и окончание периода"); return; }
+  api("api/specials.php?action=tech-save", {method:"POST", body: JSON.stringify({start:s.replace("T"," "), end:e.replace("T"," ")})})
+    .then(function(){ $("tp_start").value=""; $("tp_end").value=""; loadSpecials(); toast("Период добавлен"); })
+    .catch(function(e2){toast(e2.message);});
+}
+function saveTechRow(id){
+  var si=document.querySelector('.tp-start[data-id="'+id+'"]');
+  var ei=document.querySelector('.tp-end[data-id="'+id+'"]');
+  var pi=document.querySelector('.tp-pic[data-id="'+id+'"]');
+  var vi=document.querySelector('.tp-vid[data-id="'+id+'"]');
+  if (!si.value || !ei.value) { toast("Укажите даты периода"); return; }
+  api("api/specials.php?action=tech-save", {method:"POST", body: JSON.stringify({
+    id:id, start:si.value.replace("T"," "), end:ei.value.replace("T"," "),
+    picture:pi.value.trim(), video:vi.value.trim()
+  })}).then(function(){ toast("Период сохранён"); loadSpecials(); }).catch(function(e){toast(e.message);});
+}
+function uploadTechFile(id){
+  var inp=document.querySelector('.tp-file[data-id="'+id+'"]');
+  if (!inp || !inp.files[0]) { toast("Выберите файл заставки"); return; }
+  var f=inp.files[0];
+  var fd = new FormData();
+  fd.append("id", id);
+  fd.append("file", f, f.name);
+  var si=document.querySelector('.tp-start[data-id="'+id+'"]');
+  var ei=document.querySelector('.tp-end[data-id="'+id+'"]');
+  var pi=document.querySelector('.tp-pic[data-id="'+id+'"]');
+  var vi=document.querySelector('.tp-vid[data-id="'+id+'"]');
+  if (si && si.value) fd.append("start", si.value.replace("T"," "));
+  if (ei && ei.value) fd.append("end", ei.value.replace("T"," "));
+  if (pi) fd.append("picture", pi.value.trim());
+  if (vi) fd.append("video", vi.value.trim());
+  if (isImageName(f.name)) {
+    // загружено изображение — спрашиваем длительность будущего mp4
+    var def = 60;
+    var d = prompt("Изображение будет сконвертировано в видео. Укажите длительность ролика в секундах:", String(def));
+    if (d === null) return;
+    d = parseInt(d,10); if (!d || d<3) d=3; if (d>3600) d=3600;
+    fd.append("duration", String(d));
+  }
+  fetch("api/specials.php?action=tech-save", {method:"POST", headers:{"X-CSRF-Token":CSRF}, body:fd, credentials:"same-origin"})
+    .then(function(r){return r.text().then(function(t){
+      var j=null; try{ j=JSON.parse(t); }catch(e){}
+      if (!r.ok) throw new Error(j && j.error ? j.error : ("Ошибка сервера "+r.status+": "+t.slice(0,200)));
+      return j;
+    });})
+    .then(function(j){ toast(j.queued ? ("Файл загружен, конвертация в "+j.queued+" в очереди…") : "Сохранено"); loadSpecials(); setTimeout(loadSpecials, 10000); })
+    .catch(function(e){ admin_log_js("tech_upload_error", e.message); toast(e.message); });
+}
+function delTech(id){
+  if(!confirm("Удалить период техзакрытия?")) return;
+  api("api/specials.php?action=tech-delete", {method:"POST", body: JSON.stringify({id:id})}).then(loadSpecials);
+}
+
+// ---------- настройки конвертера (только администраторы) ----------
+function loadSettings(){
+  api("api/settings.php?action=get").then(function(d){
+    var s=d.settings;
+    ["resolution","vcodec","pix_fmt","profile","level","preset_speed","bitrate","maxrate","bufsize","acodec","abitrate","duration_image"].forEach(function(k){
+      var el=$("st_"+k); if (el) el.value = (s[k]===null||s[k]===undefined)?"":s[k];
+    });
+    $("st_crf").value = (s.crf===null||s.crf===undefined)?"":s.crf;
+    $("st_prev_video").textContent = d.preview_video;
+    $("st_prev_image").textContent = d.preview_image;
+    $("st_php").textContent = "php.ini: upload_max_filesize="+d.php.upload_max_filesize+", post_max_size="+d.php.post_max_size+
+      "; лимит приложения: "+Math.round(d.max_upload_size/1024/1024)+" МБ";
+  }).catch(function(e){toast(e.message);});
+}
+function saveSettings(){
+  var body={};
+  ["resolution","vcodec","pix_fmt","profile","level","preset_speed","crf","bitrate","maxrate","bufsize","acodec","abitrate","duration_image"].forEach(function(k){
+    body[k]=$("st_"+k).value.trim();
+  });
+  api("api/settings.php?action=save", {method:"POST", body: JSON.stringify(body)}).then(function(d){
+    toast("Настройки сохранены");
+    $("st_prev_video").textContent = d.preview_video;
+    $("st_prev_image").textContent = d.preview_image;
+  }).catch(function(e){toast(e.message);});
 }
 function saveWeekday(){
   api("api/specials.php?action=weekday-set", {method:"POST", body: JSON.stringify({weekday:+$("wd_day").value, enabled:$("wd_enabled").checked})})
@@ -460,15 +606,6 @@ function addSanitaryDate(){
 }
 function delSanitary(id){
   api("api/specials.php?action=sanitary-remove", {method:"POST", body: JSON.stringify({id:id})}).then(loadSpecials);
-}
-function saveTech(){
-  api("api/specials.php?action=tech-save", {method:"POST", body: JSON.stringify({
-    start: $("tp_start").value.replace("T"," "), end: $("tp_end").value.replace("T"," "),
-    picture: $("tp_pic").value, video: $("tp_vid").value
-  })}).then(function(){ toast("Сохранено"); loadSpecials(); }).catch(function(e){toast(e.message);});
-}
-function delTech(id){
-  api("api/specials.php?action=tech-delete", {method:"POST", body: JSON.stringify({id:id})}).then(loadSpecials);
 }
 
 // ---------- пользователи ----------
