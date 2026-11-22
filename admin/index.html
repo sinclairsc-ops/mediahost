@@ -146,8 +146,8 @@
       <div class="card">
         <h4>Периоды технического закрытия</h4>
         <div class="row muted">Добавить период:
-          <label>с <input type="datetime-local" id="tp_start"></label>
-          <label>по <input type="datetime-local" id="tp_end"></label>
+          <label>с <input type="date" id="tp_start"></label>
+          <label>по <input type="date" id="tp_end"></label>
           <select id="tp_new_splash"><option value="">— ролик не назначен —</option></select>
           <button onclick="addTech()">＋ Добавить</button>
         </div>
@@ -543,12 +543,11 @@ function loadSpecials(){
     if (!videosCache.length) {
       api("api/videos.php?action=list").then(function(vs){ videosCache=vs; afterVideos(); });
     } else { afterVideos(); }
-    $("tp_rows").innerHTML = "";
     // выпадающий список заставок техзакрытия + новый период
     var opts = (s.tech_splashes||[]).map(function(v){
       return "<option value='"+v.id+"'>"+esc(v.title)+" ("+esc(v.file)+")</option>";
     }).join("");
-    $("tp_new_splash").innerHTML = "<option value=''>— без ролика (по резервной mp4-заставке) —</option>" + opts;
+    $("tp_new_splash").innerHTML = "<option value=''>— ролик не назначен —</option>" + opts;
   }).catch(function(e){toast(e.message);});
 }
 // Отрисовка строк техзакрытий; статус берём из videosCache (актуален при живом опросе очереди)
@@ -561,7 +560,6 @@ function paintTechRows(s){
     var sel = (s.tech_splashes||[]).map(function(v){
       return "<option value='"+v.id+"'"+(t.splash_video===v.file?" selected":"")+">"+esc(v.title)+" ("+esc(v.file)+")</option>";
     }).join("");
-    // определённый id ролика по файлу
     var vidSel = document.querySelector('.tp-sel[data-id="'+t.id+'"]');
     var chosenId = vidSel ? vidSel.value : "";
     var linked = null;
@@ -569,9 +567,10 @@ function paintTechRows(s){
     var rv = (chosenId && byId[chosenId]) || linked;
     var st = rv ? rv.status : (t.splash_video ? "файл вне библиотеки" : "не назначен");
     var badgeCls = rv ? ("b-"+rv.status) : "b-inactive";
+    var d0 = String(t.start||"").slice(0,10), d1 = String(t.end||"").slice(0,10);
     return "<tr>"+
-      "<td><input type='datetime-local' class='tp-start' data-id='"+t.id+"' value='"+(t.start||"").replace(" ","T")+"'></td>"+
-      "<td><input type='datetime-local' class='tp-end' data-id='"+t.id+"' value='"+(t.end||"").replace(" ","T")+"'></td>"+
+      "<td><input type='date' class='tp-start' data-id='"+t.id+"' value='"+d0+"'></td>"+
+      "<td><input type='date' class='tp-end' data-id='"+t.id+"' value='"+d1+"'></td>"+
       "<td><select class='tp-sel' data-id='"+t.id+"' style='max-width:230px'><option value=''>— не назначен —</option>"+sel+"</select>"+
       " <input type='file' class='tp-file' data-id='"+t.id+"' style='max-width:170px' accept='video/*,image/*,.mp4'>"+
       " <button class='small secondary' title='Загрузить новый ролик-заставку (конвертируется в mp4 и будет назначен периоду)' onclick=\"uploadTechFile('"+t.id+"')\">⬆</button></td>"+

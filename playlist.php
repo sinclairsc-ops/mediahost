@@ -17,7 +17,7 @@ date_default_timezone_set(cfg()['timezone']);
 $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
 $engine = new PlaylistEngine();
-$current = $engine->buildForClient($ip);
+$current = $engine->buildForClient($ip, new DateTimeImmutable('now'));
 
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode($current);

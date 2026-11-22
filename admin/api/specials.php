@@ -76,21 +76,26 @@ switch ($action) {
         $s = specials();
         // для UI: назначенный периоду ролик (по файлу) + статус конвертации
         $videos = store_read('videos.json');
-        $techSplash = null;
+        // все ролики-заставки техзакрытия (могут назначаться разным периодам)
+        $techSplashes = [];
+        $byFile = [];
         foreach ($videos as $v) {
-            if (($v['splash_role'] ?? '') === 'splash_tech') {
-                $techSplash = ['id' => $v['id'], 'title' => $v['title'], 'file' => $v['file'],
+            if (($v['type'] ?? '') === 'splash' && ($v['splash_role'] ?? '') === 'splash_tech') {
+                $item = ['id' => $v['id'], 'title' => $v['title'], 'file' => $v['file'],
                     'status' => $v['status'] ?? 'ready', 'error' => $v['error'] ?? null];
+                $techSplashes[] = $item;
+                $byFile[$v['file']] = $item;
             }
         }
-        $s['tech_splash'] = $techSplash;
+        $s['tech_splashes'] = $techSplashes;
         $fmt = fn(string $dt): string => date('Y-m-d', strtotime($dt));
         foreach ($s['tech_periods'] as &$tp) {
             $tp['start_d'] = $fmt((string)$tp['start']);
             $tp['end_d']   = $fmt((string)$tp['end']);
-            $tp['splash_id'] = ($techSplash && $tp['splash_video'] === $techSplash['file']) ? $techSplash['id'] : null;
-            $tp['splash_status'] = ($techSplash && $tp['splash_video'] === $techSplash['file'])
-                ? $techSplash['status'] : ($tp['splash_video'] ? 'файл вне библиотеки' : null);
+            $link = $tp['splash_video'] ? ($byFile[$tp['splash_video']] ?? null) : null;
+            $tp['splash_id'] = $link['id'] ?? null;
+            $tp['splash_title'] = $link['title'] ?? null;
+            $tp['splash_status'] = $link['status'] ?? ($tp['splash_video'] ? 'файл вне библиотеки' : null);
         }
         unset($tp);
         // периоды действия санитарных дней = расписание ролика splash_weekday (модель v3)
@@ -168,7 +173,20 @@ switch ($action) {
         require_post();
         require_csrf();
         $d = $_POST ?: request_json();
-        $start = valid_dt((string)($d['start'] ?? ''));
+        $id0 = (string)($d['id'] ?? '');
+        // частичное обновление (например, только назначение ролика): берём окно из существующего периода
+        if ($id0 !== '' && empty($d['start']) && empty($d['end'])) {
+            foreach (specials()['tech_periods'] as $tpx) {
+                if (($tpx['id'] ?? '') === $id0) {
+                    $d['start'] = $tpx['start'];
+                    $d['end'] = $tpx['end'];
+                    break;
+                }
+            }
+        }
+        $startRaw = (string)($d['start'] ?? '');
+        // период техзакрытия задаётся с точностью до дня: 00:00 — 23:59
+        $start = valid_dt(strlen($startRaw) === 10 ? $startRaw . ' 00:00' : $startRaw);
         $endRaw = (string)($d['end'] ?? '');
         $end = valid_dt(parse_day_end($endRaw));
         if (!$start || !$end) {
@@ -185,12 +203,14 @@ switch ($action) {
             $vi = find_video_index2($videos, $videoId);
             if ($vi < 0) {
                 $byFile = array_values(array_filter($videos, fn($v) => ($v['file'] ?? '') === $videoId));
-                $vi = $byFile ? array_search($byFile[0], $videos) : -1;
+                $vi = $byFile ? (int)array_search($byFile[0], $videos) : -1;
             }
             if ($vi < 0) {
                 json_error('Ролик-заставка не найден', 404);
             }
-            if (($videos[$vi]['type'] ?? '') !== 'splash' || ($videos[$vi]['splash_role'] ?? '') !== 'splash_tech') {
+            // легаси-файлы заставок без splash_role тоже допускаются
+            $isSplashRole = in_array(($videos[$vi]['splash_role'] ?? ''), ['splash_tech', 'splash_weekday'], true);
+            if (($videos[$vi]['type'] ?? '') !== 'splash' && !$isSplashRole) {
                 json_error('Выбранный ролик не является заставкой технического закрытия', 400);
             }
             $splashVideo = $videos[$vi]['file'];
