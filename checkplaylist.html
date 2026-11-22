@@ -1,0 +1,56 @@
+<html>
+<!-- Скрипт проверки плейлиста -->
+<head>
+<meta charset="utf-8">
+<title>Аквапарк - 1/5</title>
+<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+
+<div id="report">
+</div>
+
+
+<script>
+	var version = "0";
+
+
+//Загрузим плейлист
+	shedule = "shedule_check.php";
+	var xhr_shedule=new XMLHttpRequest();
+	xhr_shedule.open("GET",shedule,false);
+//	xhr_shedule.timeout = 4000;
+	xhr_shedule.onload=function()
+	{
+		timeplan = JSON.parse(xhr_shedule.responseText);
+	}
+	xhr_shedule.onloadend =function()
+	{
+		if (xhr_shedule.status != 200) 
+		{
+			vis = document.getElementById("report");
+			vis.innerHTML = "Timeplan loading error";
+		}
+	}
+	xhr_shedule.send("");
+
+	vis = document.getElementById("report");
+	
+	playlist = timeplan["Playlist"];
+	sanitary_day = timeplan["SanitaryDay"];
+	playlist_start = timeplan["playlist_start"];
+	playlist_end = timeplan["playlist_end"];
+
+	text = "Актуальный плейлист действует с "+playlist_start+" по "+playlist_end+(sanitary_day?" с санитарным днём в понедельник":" без санитарного дня в понедельник")+"<br>";
+
+	video_count = playlist.length;
+
+	for(i=0; i<video_count;i++)
+		text += (i+1) + ". " +playlist[i]+"<br>";
+
+	vis.innerHTML = text;
+
+
+</script>
+</body>
+</html>
