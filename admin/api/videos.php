@@ -88,6 +88,14 @@ switch ($action) {
                 $msg .= '. Ожидается multipart/form-data с полем "file". Проверьте, что в JavaScript для отправки используется FormData.';
             } elseif ($errCode === UPLOAD_ERR_INI_SIZE) {
                 $msg .= sprintf('. Превышен upload_max_filesize=%s или post_max_size=%s на сервере.', ini_get('upload_max_filesize'), ini_get('post_max_size'));
+            } elseif ($errCode === UPLOAD_ERR_NO_FILE && $isMultipart && $bytesRecv > 0) {
+                // Тело запроса обрезано: PHP не смог разобрать multipart (post_max_size меньше тела) — $_POST/$_FILES пусты.
+                $msg .= sprintf(
+                    '. Тело запроса (%d МБ) превышает лимит post_max_size=%s на сервере: PHP проигнорировал все поля формы.'
+                    . ' Увеличьте post_max_size и upload_max_filesize (см. README, раздел «Лимиты загрузки»), перезапустите PHP-FPM/Apache и повторите загрузку.',
+                    intdiv($bytesRecv, 1024 * 1024),
+                    (string)ini_get('post_max_size')
+                );
             }
             json_error($msg, 400);
         }

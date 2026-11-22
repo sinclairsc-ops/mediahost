@@ -55,3 +55,44 @@ php -r '$u=json_decode(file_get_contents("data/users.json"),true); foreach($u as
 - Видео: `ffmpeg -i in -s 1280x720 -c:v libx264 -pix_fmt yuv420p -profile:v baseline -level 1.3 ... out.mp4`
 - Изображение → видео: то же + `-loop 1 -t <сек>` (по умолчанию 60)
 Пресеты настраиваются в `src/config.php`. 
+
+## Лимиты загрузки больших видеофайлов
+
+По умолчанию в PHP стоят `upload_max_filesize=2M` и `post_max_size=8M`. При загрузке
+видео большего размера PHP полностью игнорирует тело запроса (`$_FILES` пуст), и админка
+показывает ошибку «Файл не загружен». Для загрузки роликов до 2 ГБ нужно поднять лимиты.
+
+### Apache + php-fpm (Ubuntu 24.04)
+Создайте файл `/etc/php/8.3/fpm/pool.d/tvplayer-uploads.conf`-подобную настройку — лучше
+всего прямо в пуле сайта, например в `/etc/php/8.3/fpm/pool.d/www.conf` добавить:
+
+    php_admin_value[upload_max_filesize] = 2G
+    php_admin_value[post_max_size] = 2100M
+    php_admin_value[max_execution_time] = 0
+    php_admin_value[memory_limit] = 512M
+
+Перезапустите: `sudo systemctl restart php8.3-fpm`
+
+В конфиге Apache для location `/admin/api/` увеличьте ограничение тела запроса:
+
+    LimitRequestFieldSize 65536
+    # mod_fcgid / mod_proxy_fcgi обычно не режут тело; mod_security может — проверьте SecRequestBodyLimit
+
+### Apache + mod_php
+В каталоге `admin/api/` уже лежит `.htaccess` с нужными `php_value` (работает только
+при mod_php и AllowOverride).
+
+### Встроенный php -S (тестовая среда разработки)
+Лимиты задаются через `-d`:
+
+    php -S 0.0.0.0:8080 -d upload_max_filesize=2G -d post_max_size=2100M -d memory_limit=512M
+
+### Nginx + php-fpm
+В `server`/`location ~ \.php$`:
+
+    client_max_body_size 2100m;
+    fastcgi_read_timeout 3600;
+
+и те же `php_admin_value` в пуле php-fpm, что выше. После изменений перезапустите
+nginx и php-fpm и повторите загрузку. Значение `max_upload_size` в настройках приложения
+(страница «Настройки») должно быть не больше серверных лимитов.
