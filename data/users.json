@@ -1,0 +1,8 @@
+[
+    {
+        "login": "admin",
+        "passhash": "$argon2id$v=19$m=65536,t=4,p=1$TDdXV3BtNUk2UHZkZVhGUA$K1BB6b6+bSe3OMAToeJhKCOFcGsJ8k93qSn/ewAVYWg",
+        "role": "admin",
+        "created": "2026-11-22T11:18:54+00:00"
+    }
+]
