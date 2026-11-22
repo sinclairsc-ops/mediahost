@@ -24,24 +24,80 @@ switch ($action) {
 
     // ---- периоды технического закрытия ----
     case 'tech-save':
+        // JSON (существующие picture/video — по именам файлов в media/) или multipart с файлами-заставками
         require_auth();
         require_post();
         require_csrf();
-        $d = request_json();
+
+        if (!empty($_FILES)) {
+            $errCode = $_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE;
+            if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+                admin_log('upload_failed', ['context' => 'tech_save', 'error_code' => (int)$errCode,
+                    'files_keys' => array_keys($_FILES)]);
+                json_error('Файл заставки не загружен: ' . upload_err_message((int)$errCode), 400);
+            }
+        }
+
+        $d = $_POST ?: request_json();
         $start = valid_dt((string)($d['start'] ?? ''));
         $end   = valid_dt((string)($d['end'] ?? ''));
-        if (!$start || !$end || $start >= $end) {
-            json_error('Неверный период техзакрытия');
+        if (!$start || !$end) {
+            json_error('Неверный формат дат. Ожидается "ГГГГ-ММ-ДД ЧЧ:ММ"');
+        }
+        if (strlen((string)$d['end']) === 10) {
+            $end = date('Y-m-d', strtotime($end . ' +1 day')) . ' 00:00';
+        }
+        if ($start >= $end) {
+            json_error('Дата окончания должна быть позже даты начала');
         }
         $s = specials();
-        $pic = trim((string)($d['picture'] ?? ''));
+        $id = (string)($d['id'] ?? new_id());
+
+        $pic  = trim((string)($d['picture'] ?? ''));
+        $vid  = trim((string)($d['video'] ?? ''));
         if ($pic !== '' && !preg_match('/^[A-Za-z0-9._-]+\.(jpe?g|png|webp)$/i', $pic)) {
             json_error('Недопустимое имя картинки');
         }
-        $item = ['id' => (string)($d['id'] ?? new_id()), 'start' => $start, 'end' => $end, 'picture' => $pic ?: null];
+        if ($vid !== '' && !preg_match('/^[A-Za-z0-9._-]+\.mp4$/i', $vid)) {
+            json_error('Недопустимое имя видео-заставки (только .mp4)');
+        }
+
+        // загрузка файла-заставки: изображения конвертируются в mp4 (как и ролики), картинка остаётся jpg
+        $uploadedFile = null;
+        $isImageUpload = false;
+        if (!empty($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+            $orig = basename($_FILES['file']['name']);
+            $ext  = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+            $isVideoUp = in_array($ext, cfg()['allowed_video_extensions'], true);
+            $isImageUp = in_array($ext, cfg()['allowed_image_extensions'], true);
+            if (!$isVideoUp && !$isImageUp) {
+                admin_log('upload_rejected', ['name' => $orig, 'ext' => $ext, 'context' => 'tech_save']);
+                json_error("Недопустимый тип файла заставки: .$ext (видео или изображение)", 400);
+            }
+            $title = trim((string)($d['title'] ?? ('tech-' . $id)));
+            $slug  = slugify($title);
+            $srcName = "src_tech_{$id}_{$orig}";
+            @mkdir(root_path('uploads'), 0775, true);
+            if (!move_uploaded_file($_FILES['file']['tmp_name'], root_path('uploads/' . $srcName))) {
+                admin_log('upload_failed', ['name' => $orig, 'reason' => 'move_uploaded_file failed', 'context' => 'tech_save']);
+                json_error('Не удалось сохранить загруженный файл', 500);
+            }
+            $uploadedFile = ['src' => $srcName, 'slug' => $slug];
+            $isImageUpload = $isImageUp;
+        }
+
+        $item = [
+            'id'      => $id,
+            'start'   => $start,
+            'end'     => $end,
+            'picture' => $pic ?: null,
+            'video'   => $vid ?: null,
+        ];
         $replaced = false;
         foreach ($s['tech_periods'] as $i => $tp) {
             if ($tp['id'] === $item['id']) {
+                $item['video'] = $item['video'] ?: ($tp['video'] ?? null);
+                $item['picture'] = $item['picture'] ?: ($tp['picture'] ?? null);
                 $s['tech_periods'][$i] = $item;
                 $replaced = true;
             }
@@ -49,8 +105,27 @@ switch ($action) {
         if (!$replaced) {
             $s['tech_periods'][] = $item;
         }
+        usort($s['tech_periods'], fn($a, $b) => strcmp($a['start'], $b['start']));
         store_write('specials.json', $s);
         admin_log($replaced ? 'tech_period_update' : 'tech_period_create', $item);
+
+        if ($uploadedFile) {
+            // ставим задачу воркеру: любой загруженный файл -> mp4 в media/
+            $finalName = unique_filename(root_path('media'), $uploadedFile['slug'], 'mp4');
+            $queue = store_read('queue.json');
+            $queue[] = [
+                'video_id' => 'tech:' . $item['id'],   // special task id (не ролик из videos.json)
+                'source'   => $uploadedFile['src'],
+                'filename' => $finalName,
+                'kind'     => $isImageUpload ? 'image' : 'video',
+                'duration' => isset($d['duration']) && $isImageUpload ? (int)$d['duration'] : null,
+                'target'   => 'tech:' . $item['id'],
+                'added'    => date('c'),
+            ];
+            store_write('queue.json', $queue);
+            admin_log('tech_splash_upload', ['period_id' => $item['id'], 'file' => $finalName, 'kind' => $isImageUpload ? 'image' : 'video']);
+            json_out(['ok' => true, 'item' => $item, 'queued' => $finalName], 201);
+        }
         json_out(['ok' => true, 'item' => $item]);
         break;
 

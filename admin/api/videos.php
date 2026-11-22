@@ -54,29 +54,42 @@ switch ($action) {
         break;
 
     case 'upload':
-        // multipart/form-data: file, title, type(main|additional), preset, duration(для изображений)
+        // multipart/form-data: file, title, type(main|additional), duration(для изображений)
         require_auth();
         require_post();
         require_csrf();
 
+        $errCode = $_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE;
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-            json_error('Файл не загружен: ' . ($_FILES['file']['error'] ?? 'no file'), 400);
+            $msg = 'Файл не загружен: ' . upload_err_message((int)$errCode);
+            admin_log('upload_failed', ['post_keys' => array_keys($_POST), 'files_keys' => array_keys($_FILES),
+                'content_length' => $_SERVER['CONTENT_LENGTH'] ?? null,
+                'php_upload_max' => (string)ini_get('upload_max_filesize'),
+                'php_post_max' => (string)ini_get('post_max_size'),
+                'error_code' => (int)$errCode]);
+            json_error($msg, 400);
         }
         $tmp   = $_FILES['file']['tmp_name'];
         $orig  = basename($_FILES['file']['name']);
         $ext   = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
         $title = trim((string)($_POST['title'] ?? pathinfo($orig, PATHINFO_FILENAME)));
         $type  = in_array($_POST['type'] ?? '', ['main','additional'], true) ? $_POST['type'] : 'main';
-        $preset = array_key_exists($_POST['preset'] ?? '', cfg()['presets']) ? $_POST['preset'] : array_key_first(cfg()['presets']);
 
         $isVideo = in_array($ext, cfg()['allowed_video_extensions'], true);
         $isImage = in_array($ext, cfg()['allowed_image_extensions'], true);
         if (!$isVideo && !$isImage) {
             admin_log('upload_rejected', ['name' => $orig, 'ext' => $ext]);
-            json_error("Недопустимый тип файла: .$ext", 400);
+            json_error("Недопустимый тип файла: .$ext. Можно загружать видео (" . implode(', ', cfg()['allowed_video_extensions'])
+                . ") или изображения (" . implode(', ', cfg()['allowed_image_extensions']) . ")."
+                . " Все файлы конвертируются в mp4.", 400);
         }
         if ($_FILES['file']['size'] > cfg()['max_upload_size']) {
+            admin_log('upload_failed', ['name' => $orig, 'reason' => 'too large', 'size' => $_FILES['file']['size']]);
             json_error('Файл слишком большой', 400);
+        }
+        if (!is_uploaded_file($tmp)) {
+            admin_log('upload_failed', ['name' => $orig, 'reason' => 'not an uploaded file']);
+            json_error('Ошибка загрузки (файл не является загруженным)', 400);
         }
 
         $id  = new_id();
@@ -85,31 +98,33 @@ switch ($action) {
         $destDir = root_path('uploads');
         @mkdir($destDir, 0775, true);
         if (!move_uploaded_file($tmp, $destDir . '/' . $storedSource)) {
-            json_error('Не удалось сохранить загруженный файл', 500);
+            admin_log('upload_failed', ['name' => $orig, 'reason' => 'move_uploaded_file failed',
+                'uploads_dir' => $destDir, 'writable' => is_writable($destDir) ? 'yes' : 'no']);
+            json_error('Не удалось сохранить загруженный файл в uploads/ (проверьте права на каталог)', 500);
         }
 
-        // итоговое имя готового ролика: slug.mp4 (уникальное)
+        // итоговое имя готового ролика: всегда .mp4, читаемое (транслит названия)
         $mediaDir = root_path('media');
         @mkdir($mediaDir, 0775, true);
         $finalName = unique_filename($mediaDir, $slug, 'mp4');
 
         $duration = null;
         if ($isImage) {
-            $duration = (int)($_POST['duration'] ?? cfg()['presets'][$preset]['duration_image']);
-            $duration = max(3, min(600, $duration));
+            // для изображения спрашиваем длительность будущего ролика (по умолчанию — из настроек, обычно 60 с)
+            $duration = (int)($_POST['duration'] ?? convert_settings()['duration_image']);
+            $duration = max(3, min(3600, $duration));
         }
 
         $video = [
             'id'         => $id,
             'title'      => $title,
             'slug'       => $slug,
-            'file'       => $finalName,          // media/<file>
+            'file'       => $finalName,          // media/<file> — всегда mp4
             'type'       => $type,               // основной / дополнительный
             'kind'       => $isImage ? 'image' : 'video',
             'status'     => 'queued',            // queued -> converting -> ready | error
             'duration'   => null,
             'filesize'   => null,
-            'preset'     => $preset,
             'req_duration' => $duration,
             'schedule'   => [],                  // периоды активности [{id,start,end}]
             'created'    => date('c'),
@@ -126,13 +141,14 @@ switch ($action) {
             'source'   => $storedSource,
             'filename' => $finalName,
             'kind'     => $isImage ? 'image' : 'video',
-            'preset'   => $preset,
             'duration' => $duration,
             'added'    => date('c'),
         ];
         store_write('queue.json', $queue);
 
-        admin_log('video_upload', ['id' => $id, 'title' => $title, 'file' => $finalName, 'kind' => $video['kind'], 'type' => $type, 'preset' => $preset]);
+        admin_log('video_upload', ['id' => $id, 'title' => $title, 'orig' => $orig, 'file' => $finalName,
+            'kind' => $video['kind'], 'type' => $type, 'duration_req' => $duration,
+            'size' => $_FILES['file']['size']]);
         json_out(['ok' => true, 'video' => $video], 201);
         break;
 

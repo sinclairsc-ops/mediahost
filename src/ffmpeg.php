@@ -8,7 +8,8 @@ require_once __DIR__ . '/util.php';
  * Команды соответствуют текущим windows-скриптам:
  *   видео:       ffmpeg -i IN -s 1280x720 -c:v libx264 -pix_fmt yuv420p -profile:v baseline -level 1.3 -y OUT.mp4
  *   изображение: ffmpeg -loop 1 -i IN -t 60 -s 1280x720 ... -y OUT.mp4
- * Дополнительно добавлены -movflags +faststart (быстрый старт на ТВ) и AAC-аудио.
+ * Дополнительно: -movflags +faststart (быстрый старт на ТВ), AAC-аудио.
+ * Параметры берутся из convert_settings() (страница «Настройки» в админке).
  */
 class FfmpegService
 {
@@ -22,7 +23,7 @@ class FfmpegService
         return is_numeric($v) ? (float)$v : null;
     }
 
-    /** Разрешить произвольные параметры конвертации, но собрать команду безопасно (массив аргументов) */
+    /** Собрать команду конвертации по настройкам (массив аргументов — безопасно) */
     public static function buildCommand(string $input, string $output, array $opts, bool $isImage, ?int $duration = null): array
     {
         $cmd = [cfg()['ffmpeg_bin'], '-hide_banner', '-loglevel', 'error', '-y'];
@@ -34,14 +35,18 @@ class FfmpegService
         $cmd[] = $input;
         if ($isImage) {
             $cmd[] = '-t';
-            $cmd[] = (string)($duration ?? $opts['duration_image'] ?? 60);
+            $cmd[] = (string)max(1, (int)($duration ?? $opts['duration_image'] ?? 60));
         }
-        $cmd[] = '-s';
-        $cmd[] = $opts['resolution'] ?? '1280x720';
+        if (!empty($opts['resolution'])) {
+            $cmd[] = '-s';
+            $cmd[] = $opts['resolution'];
+        }
         $cmd[] = '-c:v';
         $cmd[] = $opts['vcodec'] ?? 'libx264';
-        $cmd[] = '-pix_fmt';
-        $cmd[] = $opts['pix_fmt'] ?? 'yuv420p';
+        if (!empty($opts['pix_fmt'])) {
+            $cmd[] = '-pix_fmt';
+            $cmd[] = $opts['pix_fmt'];
+        }
         if (!empty($opts['profile'])) {
             $cmd[] = '-profile:v';
             $cmd[] = $opts['profile'];
@@ -50,8 +55,24 @@ class FfmpegService
             $cmd[] = '-level:v';
             $cmd[] = $opts['level'];
         }
-        foreach ($opts['extra_v'] ?? [] as $a) {
-            $cmd[] = $a;
+        if (!empty($opts['preset_speed'])) {
+            $cmd[] = '-preset';
+            $cmd[] = $opts['preset_speed'];
+        }
+        if (($opts['crf'] ?? null) !== null && $opts['crf'] !== '') {
+            $cmd[] = '-crf';
+            $cmd[] = (string)(int)$opts['crf'];
+        } elseif (!empty($opts['bitrate'])) {
+            $cmd[] = '-b:v';
+            $cmd[] = $opts['bitrate'];
+        }
+        if (!empty($opts['maxrate'])) {
+            $cmd[] = '-maxrate';
+            $cmd[] = $opts['maxrate'];
+        }
+        if (!empty($opts['bufsize'])) {
+            $cmd[] = '-bufsize';
+            $cmd[] = $opts['bufsize'];
         }
         // аудио: если в источнике нет дорожки, ffmpeg тихо пропустит -c:a
         $cmd[] = '-c:a';
@@ -66,25 +87,38 @@ class FfmpegService
         return $cmd;
     }
 
+    /** Предпросмотр команды для страницы настроек */
+    public static function previewCommand(bool $isImage): string
+    {
+        $sample = self::buildCommand(
+            $isImage ? '/path/in/kartinka.jpg' : '/path/in/rolik.avi',
+            $isImage ? '/var/www/html/media/out.mp4' : '/var/www/html/media/out.mp4',
+            convert_settings(), $isImage, (int)(convert_settings()['duration_image'] ?? 60)
+        );
+        return implode(' ', array_map('escapeshellarg', $sample));
+    }
+
     private static function escapeAll(array $cmd): string
     {
         return implode(' ', array_map('escapeshellarg', $cmd));
     }
 
     /**
-     * Синхронная конвертация (используется воркером). Возвращает true/false.
+     * Синхронная конвертация ЛЮБОГО входного файла (видео или изображение) в MP4.
+     * Настройки конвертера читаются из convert_settings(). Возвращает true/false.
      */
-    public static function convert(string $input, string $output, string $presetKey, bool $isImage, ?int $duration = null): bool
+    public static function convert(string $input, string $output, bool $isImage, ?int $duration = null): bool
     {
-        $presets = cfg()['presets'];
-        $opts = $presets[$presetKey] ?? reset($presets);
-        $cmd = self::escapeAll(self::buildCommand($input, $output, $opts, $isImage, $duration));
+        $cmd = self::escapeAll(self::buildCommand($input, $output, convert_settings(), $isImage, $duration));
         $rc = 0;
         $log = [];
+        @mkdir(root_path('tmp'), 0775, true);
         exec($cmd . ' 2>&1', $log, $rc);
         if ($rc !== 0) {
             file_put_contents(root_path('tmp/ffmpeg-error.log'),
-                date('c') . ' ' . $cmd . "\n" . implode("\n", $log) . "\n\n", FILE_APPEND);
+                date('c') . ' rc=' . $rc . ' ' . $cmd . "\n" . implode("\n", $log) . "\n\n", FILE_APPEND);
+            admin_log('ffmpeg_error', ['input' => basename($input), 'output' => basename($output), 'rc' => $rc,
+                'last' => implode(' | ', array_slice($log, -3))]);
             return false;
         }
         return true;
