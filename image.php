@@ -2,7 +2,7 @@
 
 //Подключается к БД и возвращает текстовое сообщение с количеством посетителей для информера
 
-if ($conn=OCILogon("kurort", "kurortt", "//192.168.12.10:1521/ora01"))
+if ($conn=OCILogon("login", "password", "//192.168.12.10:1521/ora01"))
 
 {
 //  echo "Successfully connected to Oracle.\n";
