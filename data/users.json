@@ -1,8 +1,14 @@
 [
-  {
-    "login": "admin",
-    "passhash": "$argon2id$v=19$m=65536,t=4,p=1$a3gxYTQxWldXS1kyczlVMg$fwdwohvGWHNSpFEcB5Dw2mvEYweunqv3d61CbnFEJXo",
-    "role": "admin",
-    "created": "2026-11-22T11:18:54+00:00"
-  }
+    {
+        "login": "admin",
+        "passhash": "$argon2id$v=19$m=65536,t=4,p=1$a3gxYTQxWldXS1kyczlVMg$fwdwohvGWHNSpFEcB5Dw2mvEYweunqv3d61CbnFEJXo",
+        "role": "admin",
+        "created": "2026-11-22T11:18:54+00:00"
+    },
+    {
+        "login": "editor",
+        "passhash": "$argon2id$v=19$m=65536,t=4,p=1$OG1jN253L3p4amNWUnZFRQ$woCKhvNsmaGEX2o5yQDLQvkG/YaJGGBC7Xsc51NSdZQ",
+        "role": "editor",
+        "created": "2026-11-22T18:47:26+03:00"
+    }
 ]

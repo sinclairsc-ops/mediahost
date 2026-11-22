@@ -17,11 +17,11 @@
                 "end": "2099-12-31 23:30"
             }
         ],
-        "order": 10
+        "order": 1
     },
     {
         "id": "migrated-2_relaxzone_072023",
-        "title": "2_RelaxZone_072023",
+        "title": "Зона отдыха с июля 2023",
         "slug": "2_relaxzone_072023",
         "file": "2_RelaxZone_072023.mp4",
         "type": "main",
@@ -37,11 +37,11 @@
                 "end": "2099-12-31 23:30"
             }
         ],
-        "order": 9
+        "order": 2
     },
     {
         "id": "migrated-3_lost_world_072023",
-        "title": "3_Lost_world_072023",
+        "title": "Кафе \"Затерянный мир\"",
         "slug": "3_lost_world_072023",
         "file": "3_Lost_world_072023.mp4",
         "type": "main",
@@ -57,11 +57,11 @@
                 "end": "2099-12-31 23:30"
             }
         ],
-        "order": 8
+        "order": 3
     },
     {
         "id": "migrated-4_rules",
-        "title": "4_Rules",
+        "title": "Правила пользования аквапарком",
         "slug": "4_rules",
         "file": "4_Rules.mp4",
         "type": "main",
@@ -77,7 +77,7 @@
                 "end": "2099-12-31 23:30"
             }
         ],
-        "order": 7
+        "order": 4
     },
     {
         "id": "migrated-5_whatchplace_072023",
@@ -97,7 +97,7 @@
                 "end": "2099-12-31 23:30"
             }
         ],
-        "order": 6
+        "order": 5
     },
     {
         "id": "migrated-6_dinobar",
@@ -117,7 +117,7 @@
                 "end": "2099-12-31 23:30"
             }
         ],
-        "order": 5
+        "order": 6
     },
     {
         "id": "migrated-giftcards29042022",
@@ -137,7 +137,7 @@
                 "end": "2099-12-31 23:30"
             }
         ],
-        "order": 4
+        "order": 7
     },
     {
         "id": "migrated-08_animationprogram072022",
@@ -157,7 +157,7 @@
                 "end": "2099-12-31 23:30"
             }
         ],
-        "order": 3
+        "order": 8
     },
     {
         "id": "migrated-09_lounge_tv",
@@ -177,7 +177,7 @@
                 "end": "2099-12-31 23:30"
             }
         ],
-        "order": 2
+        "order": 9
     },
     {
         "id": "migrated-khalva20220511",
@@ -222,7 +222,7 @@
         "title": "tech042024",
         "slug": "tech042024",
         "file": "tech042024.mp4",
-        "type": "splash",
+        "type": "additional",
         "kind": "video",
         "status": "ready",
         "duration": null,
@@ -230,12 +230,11 @@
         "migrated": true,
         "schedule": [
             {
-                "id": "bf0ff09581c7b629",
-                "start": "2024-04-01 00:00",
-                "end": "2024-04-28 23:59"
+                "id": "3dd1891f2306fcf9",
+                "start": "2024-03-20 00:00",
+                "end": "2024-03-31 22:00"
             }
-        ],
-        "splash_role": "splash_tech"
+        ]
     },
     {
         "id": "migrated-imidge032025_tv",
@@ -255,7 +254,7 @@
                 "end": "2026-12-31 22:00"
             }
         ],
-        "order": 1
+        "order": 10
     },
     {
         "id": "migrated-giftcards032025",
@@ -281,7 +280,7 @@
         "title": "tech042025",
         "slug": "tech042025",
         "file": "tech042025.mp4",
-        "type": "splash",
+        "type": "additional",
         "kind": "video",
         "status": "ready",
         "duration": null,
@@ -289,12 +288,11 @@
         "migrated": true,
         "schedule": [
             {
-                "id": "0ee64cc4d877f0a7",
-                "start": "2025-04-07 00:00",
-                "end": "2025-05-05 23:59"
+                "id": "68494680bb7aa7a0",
+                "start": "2025-04-04 22:00",
+                "end": "2025-04-06 22:00"
             }
-        ],
-        "splash_role": "splash_tech"
+        ]
     },
     {
         "id": "migrated-anketa_062026_tv",
@@ -354,107 +352,77 @@
         ]
     },
     {
-        "id": "e71f975c421934bc",
+        "id": "e33fa4b5ec19b87a",
+        "title": "Акция с KFC июль 2023",
+        "slug": "aktsiya-s-kfc-iyul-2023",
+        "file": "aktsiya-s-kfc-iyul-2023.mp4",
+        "type": "additional",
+        "kind": "image",
+        "splash_role": null,
+        "status": "ready",
+        "duration": 60,
+        "filesize": 5053624,
+        "req_duration": 60,
+        "schedule": [],
+        "created": "2026-11-22T22:51:28+03:00",
+        "error": null
+    },
+    {
+        "id": "b2c462224be41ffb",
         "title": "Санитарный день",
         "slug": "sanitarnyy-den",
-        "file": "s_day.mp4",
+        "file": "sanitarnyy-den.mp4",
         "type": "splash",
-        "kind": "video",
+        "kind": "image",
         "splash_role": "splash_weekday",
         "status": "ready",
-        "duration": null,
-        "filesize": null,
+        "duration": 600,
+        "filesize": 28362646,
+        "req_duration": 600,
         "schedule": [
             {
-                "id": "1fd6ed11fe464f0c",
-                "start": "2026-11-22 18:45",
+                "id": "19301b9d6870fcf0",
+                "start": "2026-11-05 22:54",
                 "end": "2027-01-01 00:00"
             },
             {
-                "id": "3a3cf9f476b3ba9a",
-                "start": "2027-01-11 18:45",
+                "id": "3b54876ef27d118d",
+                "start": "2027-01-11 22:55",
                 "end": "2027-03-22 00:00"
             },
             {
-                "id": "aadda25070ad5e8c",
-                "start": "2027-05-01 18:45",
+                "id": "90a0570489659b3c",
+                "start": "2027-05-01 22:55",
                 "end": "2027-06-01 00:00"
             },
             {
-                "id": "d0b61636e3a46388",
-                "start": "2027-09-01 18:46",
+                "id": "46d32ad7bcd88634",
+                "start": "2027-09-01 22:56",
                 "end": "2027-10-25 00:00"
             },
             {
-                "id": "3792cc65397eb44d",
-                "start": "2027-11-08 18:46",
+                "id": "9a7eecd42006b4f8",
+                "start": "2027-11-08 22:56",
                 "end": "2028-01-01 00:00"
             }
         ],
-        "created": "2026-11-22T22:08:45+03:00",
+        "created": "2026-11-22T22:53:37+03:00",
         "error": null
     },
     {
-        "id": "f643404834430a04",
-        "title": "tech03042023",
-        "slug": "tech03042023",
-        "file": "tech03042023.mp4",
+        "id": "cd2edec8e1ce5536",
+        "title": "Техническое закрытие 2023",
+        "slug": "tehnicheskoe-zakrytie-2023",
+        "file": "tehnicheskoe-zakrytie-2023.mp4",
         "type": "splash",
-        "kind": "video",
+        "kind": "image",
         "splash_role": "splash_tech",
         "status": "ready",
-        "duration": null,
-        "filesize": null,
-        "schedule": [
-            {
-                "id": "3fafde7b42b6474f",
-                "start": "2023-04-03 00:00",
-                "end": "2023-04-30 23:59"
-            }
-        ],
-        "created": "2026-11-22T22:08:45+03:00",
-        "error": null
-    },
-    {
-        "id": "bad1e2dd72314fc0",
-        "title": "s_day_10may",
-        "slug": "s-day-10may",
-        "file": "s_day_10may.mp4",
-        "type": "splash",
-        "kind": "video",
-        "splash_role": "splash_tech",
-        "status": "ready",
-        "duration": null,
-        "filesize": null,
-        "schedule": [
-            {
-                "id": "e0c9389eaef8acb6",
-                "start": "2023-05-10 00:00",
-                "end": "2023-05-10 23:59"
-            }
-        ],
-        "created": "2026-11-22T22:08:45+03:00",
-        "error": null
-    },
-    {
-        "id": "73c3e49621a18912",
-        "title": "maintenance2026",
-        "slug": "maintenance2026",
-        "file": "maintenance2026.mp4",
-        "type": "splash",
-        "kind": "video",
-        "splash_role": "splash_tech",
-        "status": "error",
-        "duration": null,
-        "filesize": null,
-        "schedule": [
-            {
-                "id": "6dfc5d54886e0f3c",
-                "start": "2026-04-06 00:00",
-                "end": "2026-04-30 23:59"
-            }
-        ],
-        "created": "2026-11-22T22:08:45+03:00",
+        "duration": 600,
+        "filesize": 22851431,
+        "req_duration": 600,
+        "schedule": [],
+        "created": "2026-11-22T23:52:00+03:00",
         "error": null
     }
 ]
