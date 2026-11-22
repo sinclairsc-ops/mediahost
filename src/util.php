@@ -119,6 +119,37 @@ function new_id(): string
 }
 
 /**
+ * Настройки конвертера (редактируются в админке, хранятся в data/settings.json).
+ * Если файла нет — берутся значения по умолчанию из config.php ('convert_defaults').
+ */
+function convert_settings(): array
+{
+    $defaults = cfg()['convert_defaults'] ?? [];
+    $saved = store_read('settings.json');
+    return is_array($saved) && $saved ? array_merge($defaults, $saved) : $defaults;
+}
+
+function save_convert_settings(array $s): void
+{
+    store_write('settings.json', $s);
+}
+
+/** Человекочитаемое описание ошибки загрузки PHP */
+function upload_err_message(int $code): string
+{
+    switch ($code) {
+        case UPLOAD_ERR_INI_SIZE:   return 'файл превышает upload_max_filesize в php.ini';
+        case UPLOAD_ERR_FORM_SIZE:  return 'файл превышает MAX_FILE_SIZE в форме';
+        case UPLOAD_ERR_PARTIAL:    return 'файл загружен частично';
+        case UPLOAD_ERR_NO_FILE:    return 'файл не передан (проверьте поле "file" формы)';
+        case UPLOAD_ERR_NO_TMP_DIR: return 'на сервере нет временной директории (upload_tmp_dir)';
+        case UPLOAD_ERR_CANT_WRITE: return 'не удалось записать файл на диск сервера';
+        case UPLOAD_ERR_EXTENSION:  return 'загрузка прервана PHP-расширением';
+        default: return 'код ошибки ' . $code;
+    }
+}
+
+/**
  * Журнал действий администратора (append-only, JSON Lines).
  */
 function admin_log(string $action, array $details = []): void

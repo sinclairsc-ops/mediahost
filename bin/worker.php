@@ -43,25 +43,55 @@ $output = root_path('media/' . $task['filename']);
 @mkdir(dirname($output), 0775, true);
 
 $isImage = $task['kind'] === 'image';
-$ok = is_file($input) && FfmpegService::convert($input, $output, $task['preset'], $isImage, $task['duration'] ?? null);
+$ok = is_file($input) && FfmpegService::convert($input, $output, $isImage, $task['duration'] ?? null);
 
 if ($ok) {
     $dur = FfmpegService::ffprobeDuration($output);
-    updateVideo($task['video_id'], [
-        'status'   => 'ready',
-        'duration' => $dur,
-        'filesize' => filesize($output),
-        'error'    => null,
-    ]);
+    if (isTechTask($task)) {
+        setTechVideo((string)$task['target'], $task['filename']);
+    } else {
+        updateVideo($task['video_id'], [
+            'status'   => 'ready',
+            'duration' => $dur,
+            'filesize' => filesize($output),
+            'error'    => null,
+        ]);
+    }
     @unlink($input); // исходник больше не нужен
     echo "OK: {$task['filename']} (" . round($dur ?? 0) . "s)\n";
 } else {
-    updateVideo($task['video_id'], ['status' => 'error', 'error' => 'ffmpeg failed, see tmp/ffmpeg-error.log']);
+    if (!isTechTask($task)) {
+        updateVideo($task['video_id'], ['status' => 'error', 'error' => 'ffmpeg failed, see tmp/ffmpeg-error.log']);
+    }
+    admin_log('convert_failed', ['file' => $task['filename'], 'source' => $task['source'], 'kind' => $task['kind']]);
     echo "FAIL: {$task['filename']}\n";
+}
+
+function isTechTask(array $task): bool
+{
+    return isset($task['target']) && str_starts_with((string)$task['target'], 'tech:');
+}
+
+/** После конвертации заставки техзакрытия — прописать mp4 в соответствующий период */
+function setTechVideo(string $target, string $filename): void
+{
+    $id = substr($target, strlen('tech:'));
+    $s = store_read('specials.json') + ['tech_periods' => []];
+    foreach ($s['tech_periods'] as $i => $tp) {
+        if (($tp['id'] ?? '') === $id) {
+            $s['tech_periods'][$i]['video'] = $filename;
+            break;
+        }
+    }
+    store_write('specials.json', $s);
+    admin_log('tech_splash_ready', ['period_id' => $id, 'file' => $filename]);
 }
 
 function markStatus(string $videoId, string $status): void
 {
+    if (str_starts_with($videoId, 'tech:')) {
+        return; // у задач техзакрытия статуса в videos.json нет
+    }
     updateVideo($videoId, ['status' => $status]);
 }
 
