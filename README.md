@@ -22,13 +22,38 @@ Cron для очереди конвертации:
 - `index.html`, `playlist.php` — ТВ-плеер (формат ответа совместим со старым, не менять без тестов на Chrome 22)
 - `admin/` — административный раздел (SPA + JSON API в `admin/api/`)
 - `src/` — ядро: `engine.php` (плейлист), `ffmpeg.php` (конвертация), `auth.php`, `util.php` (JSON-хранилище, логи), `config.php` (не в git)
-- `bin/worker.php` — воркер очереди перекодирования
-- `data/` — «база данных» в JSON: `videos.json`, `schedule.json`, `specials.json`, `users.json`, журнал `logs/admin-*.log`, состояние ротации `state/`
+- `bin/worker.php` — воркер очереди перекодирования; `bin/migrate_v2.php` — миграция модели данных v1→v2
+- `data/` — «база данных» в JSON: `videos.json` (ролики + их расписание), `specials.json` (особые дни), `users.json`, журнал `logs/admin-*.log`, состояние ротации `state/`
 - `media/` — готовые ролики; `uploads/` — исходники до конвертации; `cache/` — кэш
 
-## Управление пользователями
+## Модель данных (v2)
+Расписание хранится **на ролике**: каждый ролик имеет тип (`main` — основной, показывается строго по порядку;
+`additional` — дополнительный, выбирается случайно из активных) и список периодов активности
+`schedule:[{id,start,end}]`. Один ролик может быть расписан многократно в разные даты.
+
+`specials.json`:
+- `tech_periods` — периоды технического закрытия (наивысший приоритет: видео/картинка-заставка);
+- `sanitary_dates` — произвольные санитарные даты;
+- `weekday_periods` + `weekday_sanitary` — периоды действия и день недели санитарных дней.
+
+Приоритеты движка: техзакрытие → санитарный день → ротация активных роликов.
+Если активных роликов нет — плейлист пустой, админ показывает предупреждение «ПУСТО».
+
+Старая модель (`schedule.json` с периодами ротации) мигрируется автоматически:
 ```bash
-php src/auth.php add admin 'StrongPass123'      # добавить
+php bin/migrate_v2.php --dry-run   # посмотреть
+php bin/migrate_v2.php             # выполнить (создаст бэкапы data/*.v1.json)
+```
+
+## Управление пользователями
+Роли: `admin` (полный доступ, включая вкладку «Пользователи») и `editor` (ролики, расписание, особые дни).
+Смена собственного пароля доступна всем из шапки админки; администратор может менять пароль любого
+пользователя без подтверждения текущим.
+
+CLI:
+```bash
+php src/auth.php add admin 'StrongPass123'      # добавить (по умолчанию роль admin)
+php src/auth.php add editor 'EditorPass123'     # добавить редактора
 php -r '$u=json_decode(file_get_contents("data/users.json"),true); foreach($u as &$x){if($x["login"]==="admin")$x["passhash"]=password_hash("NewPass123",PASSWORD_ARGON2ID);} file_put_contents("data/users.json",json_encode($u,JSON_PRETTY_PRINT));'  # сбросить пароль
 ```
 

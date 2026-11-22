@@ -1,0 +1,1037 @@
+[
+    {
+        "id": "migrated-period-0",
+        "start": "2000-01-01 00:00",
+        "end": "2099-12-31 23:30",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": []
+    },
+    {
+        "id": "migrated-period-5",
+        "start": "2023-09-01 00:00",
+        "end": "2023-12-31 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021"
+        ]
+    },
+    {
+        "id": "migrated-period-6",
+        "start": "2024-01-01 00:00",
+        "end": "2024-12-31 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021"
+        ]
+    },
+    {
+        "id": "migrated-period-7",
+        "start": "2024-02-01 00:00",
+        "end": "2024-03-22 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-3as2_feb2024"
+        ]
+    },
+    {
+        "id": "migrated-period-8",
+        "start": "2024-02-23 00:00",
+        "end": "2024-02-23 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-23feb2024",
+            "migrated-3as2_feb2024"
+        ]
+    },
+    {
+        "id": "migrated-period-9",
+        "start": "2024-03-20 00:00",
+        "end": "2024-03-22 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-3as2_feb2024",
+            "migrated-tech042024"
+        ]
+    },
+    {
+        "id": "migrated-period-10",
+        "start": "2024-03-23 00:00",
+        "end": "2024-03-31 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-tech042024"
+        ]
+    },
+    {
+        "id": "migrated-period-12",
+        "start": "2024-04-29 00:00",
+        "end": "2024-05-05 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021"
+        ]
+    },
+    {
+        "id": "migrated-period-13",
+        "start": "2024-05-03 00:00",
+        "end": "2024-05-26 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-childshops_052024"
+        ]
+    },
+    {
+        "id": "migrated-period-14",
+        "start": "2024-05-18 00:00",
+        "end": "2024-05-26 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-childshops_052024",
+            "migrated-3as2_may2024"
+        ]
+    },
+    {
+        "id": "migrated-period-15",
+        "start": "2024-05-27 00:00",
+        "end": "2024-05-29 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-childshops_052024",
+            "migrated-3as2_may2024"
+        ]
+    },
+    {
+        "id": "migrated-period-16",
+        "start": "2024-05-30 00:00",
+        "end": "2024-07-31 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-3as2_july2024"
+        ]
+    },
+    {
+        "id": "migrated-period-17",
+        "start": "2024-07-31 22:00",
+        "end": "2024-08-31 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-3as2_august2024"
+        ]
+    },
+    {
+        "id": "migrated-period-18",
+        "start": "2024-09-16 17:30",
+        "end": "2024-09-16 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-4_rules"
+        ],
+        "additional": []
+    },
+    {
+        "id": "migrated-period-19",
+        "start": "2024-09-20 00:00",
+        "end": "2024-12-20 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-childshops_092024"
+        ]
+    },
+    {
+        "id": "migrated-period-20",
+        "start": "2024-10-26 00:00",
+        "end": "2024-11-04 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-childshops_092024"
+        ]
+    },
+    {
+        "id": "migrated-period-21",
+        "start": "2024-01-28 00:00",
+        "end": "2025-01-08 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-nyholidays2025"
+        ]
+    },
+    {
+        "id": "migrated-period-23",
+        "start": "2025-02-01 00:00",
+        "end": "2025-12-31 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021"
+        ]
+    },
+    {
+        "id": "migrated-period-24",
+        "start": "2025-02-21 00:00",
+        "end": "2025-02-23 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-giftcards29042022",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-23feb_2025"
+        ]
+    },
+    {
+        "id": "migrated-period-25",
+        "start": "2025-02-28 00:00",
+        "end": "2029-12-31 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025"
+        ]
+    },
+    {
+        "id": "migrated-period-26",
+        "start": "2025-03-29 00:00",
+        "end": "2025-04-06 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025"
+        ]
+    },
+    {
+        "id": "migrated-period-27",
+        "start": "2025-04-04 22:00",
+        "end": "2025-04-06 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-tech042025"
+        ]
+    },
+    {
+        "id": "migrated-period-29",
+        "start": "2025-06-01 00:00",
+        "end": "2025-08-31 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025"
+        ]
+    },
+    {
+        "id": "migrated-period-30",
+        "start": "2025-06-01 00:00",
+        "end": "2025-06-30 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-teikaboom_1920х1080"
+        ]
+    },
+    {
+        "id": "migrated-period-31",
+        "start": "2025-09-01 00:00",
+        "end": "2025-09-30 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-3as2_sen2025"
+        ]
+    },
+    {
+        "id": "migrated-period-32",
+        "start": "2025-10-01 00:00",
+        "end": "2025-12-20 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-restforrest102025_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-33",
+        "start": "2026-01-01 00:00",
+        "end": "2026-01-11 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025"
+        ]
+    },
+    {
+        "id": "migrated-period-34",
+        "start": "2026-01-12 00:00",
+        "end": "2026-02-31 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025"
+        ]
+    },
+    {
+        "id": "migrated-period-35",
+        "start": "2026-01-22 00:00",
+        "end": "2026-03-22 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-childshops_012026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-36",
+        "start": "2026-01-29 00:00",
+        "end": "2026-02-28 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-childshops_012026_tv",
+            "migrated-icediscount_012026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-37",
+        "start": "2026-02-21 00:00",
+        "end": "2026-02-23 17:30",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-childshops_012026_tv",
+            "migrated-23feb2026"
+        ]
+    },
+    {
+        "id": "migrated-period-38",
+        "start": "2026-03-09 00:00",
+        "end": "2026-03-09 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-childshops_012026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-39",
+        "start": "2026-03-18 00:00",
+        "end": "2026-03-30 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-childshops_012026_tv",
+            "migrated-maintenance2026"
+        ]
+    },
+    {
+        "id": "migrated-period-41",
+        "start": "2026-05-01 00:00",
+        "end": "2026-06-25 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-tv_1_aqua_okey_1920x1080_px_1м_video_tv",
+            "migrated-green_maraphon_may2026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-42",
+        "start": "2026-05-11 00:00",
+        "end": "2026-05-11 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-tv_1_aqua_okey_1920x1080_px_1м_video_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-43",
+        "start": "2026-06-01 00:00",
+        "end": "2026-06-25 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-tv_1_aqua_okey_1920x1080_px_1м_video_tv",
+            "migrated-hotels_jun2026_tv",
+            "migrated-green_maraphon_may2026_tv",
+            "migrated-anketa_062026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-44",
+        "start": "2026-06-26 00:00",
+        "end": "2026-07-15 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-hotels_jun2026_tv",
+            "migrated-green_maraphon_may2026_tv",
+            "migrated-anketa_062026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-45",
+        "start": "2026-07-01 00:00",
+        "end": "2026-07-15 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-hotels_jun2026_tv",
+            "migrated-green_maraphon_may2026_tv",
+            "migrated-anketa_062026_tv",
+            "migrated-teikaboom_jul2026"
+        ]
+    },
+    {
+        "id": "migrated-period-46",
+        "start": "2026-07-01 00:00",
+        "end": "2026-07-15 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-hotels_jun2026_tv",
+            "migrated-green_maraphon_may2026_tv",
+            "migrated-anketa_062026_tv",
+            "migrated-teikaboom_jul2026",
+            "migrated-3as2jul2026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-47",
+        "start": "2026-07-16 00:00",
+        "end": "2026-08-28 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-hotels_jun2026_tv",
+            "migrated-anketa_062026_tv",
+            "migrated-teikaboom_jul2026",
+            "migrated-3as2jul2026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-48",
+        "start": "2026-08-29 00:00",
+        "end": "2026-08-31 22:00",
+        "sanitaryday": false,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-hotels_jun2026_tv",
+            "migrated-anketa_062026_tv",
+            "migrated-teikaboom_jul2026",
+            "migrated-3as2jul2026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-49",
+        "start": "2026-09-01 00:00",
+        "end": "2026-11-10 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-hotels_jun2026_tv",
+            "migrated-anketa_062026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-50",
+        "start": "2026-09-01 00:00",
+        "end": "2026-11-10 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-anketa_062026_tv",
+            "migrated-hotels_jun2026_tv",
+            "migrated-3as2_nov2026_tv",
+            "migrated-childticketasgift_nov2026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-51",
+        "start": "2026-11-11 00:00",
+        "end": "2026-12-25 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-anketa_062026_tv",
+            "migrated-3as2_nov2026_tv",
+            "migrated-childticketasgift_nov2026_tv"
+        ]
+    },
+    {
+        "id": "migrated-period-52",
+        "start": "2026-12-26 00:00",
+        "end": "2026-12-31 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1",
+            "migrated-2_relaxzone_072023",
+            "migrated-3_lost_world_072023",
+            "migrated-4_rules",
+            "migrated-5_whatchplace_072023",
+            "migrated-6_dinobar",
+            "migrated-imidge032025_tv",
+            "migrated-08_animationprogram072022",
+            "migrated-09_lounge_tv"
+        ],
+        "additional": [
+            "migrated-khalva20220511",
+            "migrated-kidsbithday04122021",
+            "migrated-giftcards032025",
+            "migrated-anketa_062026_tv",
+            "migrated-3as2_nov2026_tv"
+        ]
+    },
+    {
+        "start": "2026-12-01 00:00",
+        "end": "2026-12-30 22:00",
+        "sanitaryday": true,
+        "main": [
+            "migrated-1"
+        ],
+        "additional": [],
+        "id": "018a18f8ac64fa5b",
+        "created": "2026-11-22T14:19:09+03:00"
+    }
+]

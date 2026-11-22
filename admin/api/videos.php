@@ -2,9 +2,39 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/_bootstrap.php';
-require_once dirname(__DIR__, 2) . '/src/ffmpeg.php';
 
 $action = $_GET['action'] ?? '';
+
+/**
+ * Валидация периода активности ролика: {start,end} в формате "Y-m-d H:i" (или дата).
+ */
+function parse_video_period(array $d): array
+{
+    $start = valid_dt((string)($d['start'] ?? ''));
+    $end   = valid_dt((string)($d['end'] ?? ''));
+    if (!$start || !$end) {
+        json_error('Неверный формат дат. Ожидается "ГГГГ-ММ-ДД ЧЧ:ММ" или "ГГГГ-ММ-ДД"');
+    }
+    // если указана только дата — конец считаем концом этих суток
+    if (strlen((string)$d['end']) === 10) {
+        $end = date('Y-m-d', strtotime($end . ' +1 day')) . ' 00:00';
+    }
+    if ($start >= $end) {
+        json_error('Дата окончания должна быть позже даты начала');
+    }
+    return ['start' => $start, 'end' => $end];
+}
+
+/** Найти индекс ролика в массиве по id */
+function find_video_index(array $videos, string $id): int
+{
+    foreach ($videos as $i => $v) {
+        if ($v['id'] === $id) {
+            return $i;
+        }
+    }
+    json_error('Ролик не найден', 404);
+}
 
 switch ($action) {
     case 'list':
@@ -24,7 +54,7 @@ switch ($action) {
         break;
 
     case 'upload':
-        // multipart/form-data: file, title, type(main|additional|splash), preset, duration(для изображений)
+        // multipart/form-data: file, title, type(main|additional), preset, duration(для изображений)
         require_auth();
         require_post();
         require_csrf();
@@ -74,13 +104,14 @@ switch ($action) {
             'title'      => $title,
             'slug'       => $slug,
             'file'       => $finalName,          // media/<file>
-            'type'       => $type,               // основной / дополнительный (по умолчанию)
+            'type'       => $type,               // основной / дополнительный
             'kind'       => $isImage ? 'image' : 'video',
             'status'     => 'queued',            // queued -> converting -> ready | error
             'duration'   => null,
             'filesize'   => null,
             'preset'     => $preset,
             'req_duration' => $duration,
+            'schedule'   => [],                  // периоды активности [{id,start,end}]
             'created'    => date('c'),
             'error'      => null,
         ];
@@ -101,7 +132,7 @@ switch ($action) {
         ];
         store_write('queue.json', $queue);
 
-        admin_log('video_upload', ['id' => $id, 'title' => $title, 'file' => $finalName, 'kind' => $video['kind'], 'preset' => $preset]);
+        admin_log('video_upload', ['id' => $id, 'title' => $title, 'file' => $finalName, 'kind' => $video['kind'], 'type' => $type, 'preset' => $preset]);
         json_out(['ok' => true, 'video' => $video], 201);
         break;
 
@@ -112,23 +143,100 @@ switch ($action) {
         $d  = request_json();
         $id = (string)($d['id'] ?? '');
         $videos = store_read('videos.json');
-        foreach ($videos as $i => $v) {
+        $i = find_video_index($videos, $id);
+        $changed = [];
+        foreach (['title'] as $f) {
+            if (isset($d[$f]) && trim((string)$d[$f]) !== '' && $d[$f] !== $videos[$i][$f]) {
+                $changed[$f] = trim((string)$d[$f]);
+                $videos[$i][$f] = $changed[$f];
+            }
+        }
+        if (isset($d['type'])) {
+            $type = (string)$d['type'];
+            if (!in_array($type, ['main', 'additional'], true)) {
+                json_error('Недопустимый тип ролика');
+            }
+            if ($type !== $videos[$i]['type']) {
+                $changed['type'] = $type;
+                $videos[$i]['type'] = $type;
+            }
+        }
+        store_write('videos.json', $videos);
+        admin_log('video_update', ['id' => $id, 'changes' => $changed]);
+        json_out(['ok' => true, 'video' => $videos[$i]]);
+        break;
+
+    // ---------- расписание ролика: список периодов активности ----------
+    case 'periods':
+        require_auth();
+        $id = $_GET['id'] ?? '';
+        foreach (store_read('videos.json') as $v) {
             if ($v['id'] === $id) {
-                $changed = [];
-                foreach (['title', 'type'] as $f) {
-                    if (isset($d[$f]) && $d[$f] !== $v[$f]) {
-                        $videos[$i][$f] = $d[$f];
-                        $changed[$f] = $d[$f];
-                    }
-                }
-                // переименование файла при смене названия — только если ролик ready и на него нет ссылок в расписании...
-                // имя файла остаётся стабильным; меняем только title. Slug-файл переименовывается отдельной операцией rename-file.
-                store_write('videos.json', $videos);
-                admin_log('video_update', ['id' => $id, 'changes' => $changed]);
-                json_out(['ok' => true, 'video' => $videos[$i]]);
+                json_out(['id' => $id, 'schedule' => $v['schedule'] ?? []]);
             }
         }
         json_error('Not found', 404);
+        break;
+
+    case 'period-add':
+        require_auth();
+        require_post();
+        require_csrf();
+        $d  = request_json();
+        $p  = parse_video_period($d);
+        $videos = store_read('videos.json');
+        $i = find_video_index($videos, (string)($d['id'] ?? ''));
+        $p['id'] = new_id();
+        $videos[$i]['schedule'][] = $p;
+        usort($videos[$i]['schedule'], fn($a, $b) => strcmp($a['start'], $b['start']));
+        store_write('videos.json', $videos);
+        admin_log('video_period_add', ['video_id' => $videos[$i]['id'], 'title' => $videos[$i]['title'], 'period' => $p]);
+        json_out(['ok' => true, 'video' => $videos[$i]]);
+        break;
+
+    case 'period-update':
+        require_auth();
+        require_post();
+        require_csrf();
+        $d = request_json();
+        $p = parse_video_period($d);
+        $videos = store_read('videos.json');
+        $i = find_video_index($videos, (string)($d['id'] ?? ''));
+        foreach ($videos[$i]['schedule'] as $j => $old) {
+            if ($old['id'] === ($d['periodId'] ?? '')) {
+                $p['id'] = $old['id'];
+                $from = $old;
+                $videos[$i]['schedule'][$j] = $p;
+                usort($videos[$i]['schedule'], fn($a, $b) => strcmp($a['start'], $b['start']));
+                store_write('videos.json', $videos);
+                admin_log('video_period_update', ['video_id' => $videos[$i]['id'], 'title' => $videos[$i]['title'], 'from' => $from, 'to' => $p]);
+                json_out(['ok' => true, 'video' => $videos[$i]]);
+            }
+        }
+        json_error('Период не найден', 404);
+        break;
+
+    case 'period-delete':
+        require_auth();
+        require_post();
+        require_csrf();
+        $d = request_json();
+        $videos = store_read('videos.json');
+        $i = find_video_index($videos, (string)($d['id'] ?? ''));
+        $before = count($videos[$i]['schedule'] ?? []);
+        $removed = null;
+        foreach ((array)($videos[$i]['schedule'] ?? []) as $per) {
+            if ($per['id'] === ($d['periodId'] ?? '')) {
+                $removed = $per;
+            }
+        }
+        $videos[$i]['schedule'] = array_values(array_filter(
+            (array)($videos[$i]['schedule'] ?? []),
+            fn($per) => $per['id'] !== ($d['periodId'] ?? '')
+        ));
+        store_write('videos.json', $videos);
+        admin_log('video_period_delete', ['video_id' => $videos[$i]['id'], 'title' => $videos[$i]['title'], 'period' => $removed]);
+        json_out(['ok' => true, 'deleted' => $before - count($videos[$i]['schedule'])]);
         break;
 
     case 'rename-file':
@@ -140,24 +248,22 @@ switch ($action) {
         $id = (string)($d['id'] ?? '');
         $newSlug = slugify((string)($d['slug'] ?? ''));
         $videos = store_read('videos.json');
-        foreach ($videos as $i => $v) {
-            if ($v['id'] !== $id) continue;
-            $old = root_path('media/' . $v['file']);
-            $newName = unique_filename(root_path('media'), $newSlug, 'mp4');
-            $new = root_path('media/' . $newName);
-            if (!is_file($old)) {
-                json_error('Файл ролика не найден', 404);
-            }
-            if (!rename($old, $new)) {
-                json_error('Не удалось переименовать файл', 500);
-            }
-            $videos[$i]['file'] = $newName;
-            $videos[$i]['slug'] = $newSlug;
-            store_write('videos.json', $videos);
-            admin_log('video_rename', ['id' => $id, 'from' => $v['file'], 'to' => $newName]);
-            json_out(['ok' => true, 'video' => $videos[$i]]);
+        $i = find_video_index($videos, $id);
+        $v = $videos[$i];
+        $old = root_path('media/' . $v['file']);
+        $newName = unique_filename(root_path('media'), $newSlug, 'mp4');
+        $new = root_path('media/' . $newName);
+        if (!is_file($old)) {
+            json_error('Файл ролика не найден', 404);
         }
-        json_error('Not found', 404);
+        if (!rename($old, $new)) {
+            json_error('Не удалось переименовать файл', 500);
+        }
+        $videos[$i]['file'] = $newName;
+        $videos[$i]['slug'] = $newSlug;
+        store_write('videos.json', $videos);
+        admin_log('video_rename', ['id' => $id, 'from' => $v['file'], 'to' => $newName]);
+        json_out(['ok' => true, 'video' => $videos[$i]]);
         break;
 
     case 'delete':
@@ -167,23 +273,23 @@ switch ($action) {
         $d  = request_json();
         $id = (string)($d['id'] ?? '');
         $videos = store_read('videos.json');
-        // проверка использования в расписании
-        foreach (store_read('schedule.json') as $p) {
-            if (in_array($id, $p['main'] ?? [], true) || in_array($id, $p['additional'] ?? [], true)) {
-                json_error("Ролик используется в периоде «{$p['start']} — {$p['end']}». Сначала удалите его из расписания.", 409);
+        $i = find_video_index($videos, $id);
+        $v = $videos[$i];
+        // проверка: ролик активен в текущем расписании?
+        $now = new DateTimeImmutable('now', new DateTimeZone(cfg()['timezone']));
+        foreach ((array)($v['schedule'] ?? []) as $per) {
+            $s = new DateTimeImmutable($per['start'], new DateTimeZone(cfg()['timezone']));
+            $e = new DateTimeImmutable($per['end'], new DateTimeZone(cfg()['timezone']));
+            if ($now >= $s && $now < $e) {
+                json_error('Ролик активен в текущем расписании (' . $per['start'] . ' — ' . $per['end'] . '). Сначала удалите действующий период.', 409);
             }
         }
-        foreach ($videos as $i => $v) {
-            if ($v['id'] === $id) {
-                @unlink(root_path('media/' . $v['file']));
-                @unlink(root_path('uploads/' . ("src_{$id}_" . ($v['orig_name'] ?? ''))));
-                unset($videos[$i]);
-                store_write('videos.json', array_values($videos));
-                admin_log('video_delete', ['id' => $id, 'file' => $v['file'], 'title' => $v['title']]);
-                json_out(['ok' => true]);
-            }
-        }
-        json_error('Not found', 404);
+        @unlink(root_path('media/' . $v['file']));
+        @unlink(root_path('uploads/' . ("src_{$id}_" . ($v['orig_name'] ?? ''))));
+        unset($videos[$i]);
+        store_write('videos.json', array_values($videos));
+        admin_log('video_delete', ['id' => $id, 'file' => $v['file'], 'title' => $v['title']]);
+        json_out(['ok' => true]);
         break;
 
     default:

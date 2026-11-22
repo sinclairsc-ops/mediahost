@@ -4,39 +4,83 @@ declare(strict_types=1);
 require_once __DIR__ . '/util.php';
 
 /**
- * Движок формирования плейлиста.
+ * Движок формирования плейлиста (модель v2).
  *
  * Совместимость со старым playlist.php:
  *  - формат ответа: {"Playlist":[...], "SanitaryDay":bool, "GeneralWatchdog":N, ["maintenance":true], ["maintenancepicture":"..."]}
  *  - состояние чередования основных/дополнительных по IP: serialize([mainIdx, wasAdditional])
  *  - watchdog = round(duration_min + 1.5), минимум 3 (как GenerateWatchDog в старом коде)
- *  - санитарный день = понедельник (N==1), если в периоде sanitaryday=true
  *
- * Новая модель данных (data/*.json):
- *  videos.json   — библиотека роликов {id,title,slug,file,type,duration,status,...}
- *  schedule.json — периоды ротации {id,start,end,sanitaryday,main:[videoId],additional:[videoId]}
- *  specials.json — {tech_periods:[{id,start,end,picture}], sanitary_dates:[{id,date}], weekday_sanitary:{enabled,weekday}}
+ * Модель данных v2 (расписание хранится НА РОЛИКЕ):
+ *  videos.json   — [{id,title,slug,file,type:main|additional,duration,status,
+ *                    schedule:[{id,start,end}, ...]}]  — список периодов активности ролика
+ *  specials.json — {
+ *      tech_periods:    [{id,start,end,picture,video}],          // техзакрытие (наивысший приоритет)
+ *      sanitary_dates:  [{id,date}],                             // произвольные санитарные дни
+ *      weekday_periods: [{id,start,end}],                        // периоды действия санитарных дней по дню недели
+ *      weekday_sanitary:{enabled,weekday}                        // какой день недели считать санитарным
+ *  }
+ *  Приоритеты: техзакрытие > санитарный день > ротация активных роликов.
+ *  Основные ролики идут по порядку (сортировка по началу периода, затем по позиции в библиотеке),
+ *  дополнительные выбираются случайным образом из активных на текущий момент.
  */
 class PlaylistEngine
 {
     private array $videos;     // id => video
-    private array $schedule;
     private array $specials;
 
     public function __construct()
     {
-        $this->videos    = [];
+        $this->videos = [];
         foreach (store_read('videos.json') as $v) {
             $this->videos[$v['id']] = $v;
         }
-        $this->schedule = store_read('schedule.json');
-        $this->specials = store_read('specials.json');
+        $this->specials = store_read('specials.json') + [
+            'tech_periods'     => [],
+            'sanitary_dates'   => [],
+            'weekday_periods'  => [],
+            'weekday_sanitary' => ['enabled' => true, 'weekday' => 1],
+        ];
     }
 
     /** Файл ролика по id (для отдачи плееру) */
     public function videoFile(string $id): ?string
     {
         return $this->videos[$id]['file'] ?? null;
+    }
+
+    /** Активные на момент $now ролики заданного типа, отсортированные по порядку показа */
+    public function activeVideos(DateTimeInterface $now, string $type): array
+    {
+        $out = [];
+        foreach ($this->videos as $pos => $v) {
+            if (($v['type'] ?? 'main') !== $type) {
+                continue;
+            }
+            if (($v['status'] ?? 'ready') !== 'ready') {
+                continue; // ещё не сконвертирован / ошибка
+            }
+            foreach ((array)($v['schedule'] ?? []) as $p) {
+                if ($this->inRange($now, (string)$p['start'], (string)$p['end'])) {
+                    $out[] = ['video' => $v, 'start' => $p['start'], 'pos' => $pos];
+                    break;
+                }
+            }
+        }
+        usort($out, fn($a, $b) => [$a['start'], $a['pos']] <=> [$b['start'], $b['pos']]);
+        return $out;
+    }
+
+    /** Период(ы) активности конкретного ролика, накрывающие $now */
+    public function activePeriodsOf(array $video, DateTimeInterface $now): array
+    {
+        $res = [];
+        foreach ((array)($video['schedule'] ?? []) as $p) {
+            if ($this->inRange($now, (string)$p['start'], (string)$p['end'])) {
+                $res[] = $p;
+            }
+        }
+        return $res;
     }
 
     /**
@@ -99,8 +143,7 @@ class PlaylistEngine
             }
         }
 
-        // 2. Санитарный день: произвольные даты или день недели внутри периода с sanitaryday=true
-        $period = $this->activePeriod($now); // может быть null
+        // 2. Санитарный день: произвольные даты ИЛИ день недели внутри периода действия сан. дней
         $isSanitary = false;
         foreach ($this->specials['sanitary_dates'] ?? [] as $sd) {
             if ($sd['date'] === $now->format('Y-m-d')) {
@@ -108,10 +151,15 @@ class PlaylistEngine
                 break;
             }
         }
-        if (!$isSanitary && $period && !empty($period['sanitaryday'])) {
+        if (!$isSanitary && !empty($this->specials['weekday_sanitary']['enabled'])) {
             $wd = (int)($this->specials['weekday_sanitary']['weekday'] ?? 1);
             if ((int)$now->format('N') === $wd) {
-                $isSanitary = true;
+                foreach ($this->specials['weekday_periods'] ?? [] as $wp) {
+                    if ($this->inRange($now, (string)$wp['start'], (string)$wp['end'])) {
+                        $isSanitary = true;
+                        break;
+                    }
+                }
             }
         }
         if ($isSanitary) {
@@ -126,15 +174,11 @@ class PlaylistEngine
             ];
         }
 
-        // 3. Обычная ротация основного/дополнительного списка активного периода
-        $main = array_values(array_filter(
-            array_map(fn($id) => $this->videoFile($id), $period['main'] ?? []),
-            fn($f) => $f !== null
-        ));
-        $additional = array_values(array_filter(
-            array_map(fn($id) => $this->videoFile($id), $period['additional'] ?? []),
-            fn($f) => $f !== null
-        ));
+        // 3. Обычная ротация: основные ролики по порядку + случайные дополнительные (по своим периодам)
+        $mainList = array_map(fn($e) => $e['video']['file'], $this->activeVideos($now, 'main'));
+        $addList  = array_map(fn($e) => $e['video']['file'], $this->activeVideos($now, 'additional'));
+        $main = array_values(array_filter($mainList, fn($f) => $f !== null));
+        $additional = array_values(array_filter($addList, fn($f) => $f !== null));
 
         $wasAdditional = (int)($state[1] ?? 0);
         $mainIdx       = (int)($state[0] ?? 0);
@@ -180,16 +224,42 @@ class PlaylistEngine
         ];
     }
 
-    /** Активный период ротации на момент $now (последний совпадающий — как в старом коде) */
-    public function activePeriod(DateTimeInterface $now): ?array
+    /**
+     * Контекст для админки: активные сейчас ролики, статус санитарного дня/техзакрытия.
+     */
+    public function context(DateTimeInterface $now): array
     {
-        $found = null;
-        foreach ($this->schedule as $p) {
-            if ($this->inRange($now, $p['start'], $p['end'])) {
-                $found = $p;
+        foreach ($this->specials['tech_periods'] ?? [] as $tp) {
+            if ($this->inRange($now, $tp['start'], $tp['end'])) {
+                return ['mode' => 'tech', 'tech' => $tp];
             }
         }
-        return $found;
+        $sanitaryReason = null;
+        foreach ($this->specials['sanitary_dates'] ?? [] as $sd) {
+            if ($sd['date'] === $now->format('Y-m-d')) {
+                $sanitaryReason = 'date';
+                break;
+            }
+        }
+        if ($sanitaryReason === null && !empty($this->specials['weekday_sanitary']['enabled'])) {
+            $wd = (int)($this->specials['weekday_sanitary']['weekday'] ?? 1);
+            if ((int)$now->format('N') === $wd) {
+                foreach ($this->specials['weekday_periods'] ?? [] as $wp) {
+                    if ($this->inRange($now, (string)$wp['start'], (string)$wp['end'])) {
+                        $sanitaryReason = 'weekday';
+                        break;
+                    }
+                }
+            }
+        }
+        if ($sanitaryReason !== null) {
+            return ['mode' => 'sanitary', 'reason' => $sanitaryReason];
+        }
+        return [
+            'mode'   => 'rotation',
+            'main'       => $this->activeVideos($now, 'main'),
+            'additional' => $this->activeVideos($now, 'additional'),
+        ];
     }
 
     private function inRange(DateTimeInterface $now, string $start, string $end): bool

@@ -10,6 +10,7 @@ switch ($action) {
         json_out([
             'auth'  => Auth::isAuthenticated(),
             'user'  => Auth::user(),
+            'role'  => $_SESSION['admin_role'] ?? null,
             'csrf'  => csrf_token(),
         ]);
         break;
@@ -17,9 +18,8 @@ switch ($action) {
     case 'login':
         require_post();
         $d = request_json();
-        // примитивная защита от перебора: не чаще 1 попытки / 2 сек на IP
         if (Auth::check((string)($d['login'] ?? ''), (string)($d['password'] ?? ''))) {
-            json_out(['ok' => true, 'user' => Auth::user(), 'csrf' => csrf_token()]);
+            json_out(['ok' => true, 'user' => Auth::user(), 'role' => $_SESSION['admin_role'] ?? null, 'csrf' => csrf_token()]);
         }
         usleep(500000); // замедлим неверные попытки
         json_error('Неверный логин или пароль', 401);
