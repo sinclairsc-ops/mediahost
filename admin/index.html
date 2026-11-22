@@ -105,6 +105,7 @@
         <div class="row">
           <input id="v_filter" placeholder="Фильтр по названию/файлу" oninput="renderVideos()">
           <label><input type="checkbox" id="v_only_active" onchange="renderVideos()"> только активные сейчас</label>
+          <label><input type="checkbox" id="v_only_inactive" onchange="renderVideos()"> только неактивные</label>
           <span class="muted" id="v_summary"></span>
         </div>
         <table>
@@ -126,7 +127,13 @@
           <label><input type="checkbox" id="wd_enabled" checked> включено</label>
           <button onclick="saveWeekday()">Сохранить</button>
         </div>
-        <div class="muted">В выбранный день недели показывается заставка «санитарный день», если дата входит в один из периодов действия ниже.</div>
+        <h5>Ролик санитарного дня</h5>
+        <div class="row">
+          <input id="sd_title" placeholder="Название заставки (напр. «Санитарный день»)">
+          <input type="file" id="sd_file" accept="video/*,image/*,.mp4" style="max-width:280px">
+          <button onclick="uploadSplash('splash_weekday')">Загрузить / заменить</button>
+        </div>
+        <div id="sd_info" class="muted"></div>
         <h5>Периоды действия санитарных дней</h5>
         <div class="row">
           <label>с <input type="date" id="wp_start"></label>
@@ -134,24 +141,21 @@
           <button onclick="addWeekdayPeriod()">+ Добавить период</button>
         </div>
         <ul class="per-list" id="wp_list"></ul>
-      </div>
-      <div class="card">
-        <h4>Произвольные санитарные даты</h4>
-        <div class="row"><input type="date" id="sd_date"><button onclick="addSanitaryDate()">+ Добавить день</button></div>
-        <div id="sd_list"></div>
+        <div class="muted">В выбранный день недели показывается только ролик санитарного дня, если дата попадает в один из периодов действия. Произвольную дату можно сделать санитарной через период технического закрытия на один день с нужным роликом — техзакрытие имеет приоритет.</div>
       </div>
       <div class="card">
         <h4>Периоды технического закрытия</h4>
         <div class="row muted">Добавить период:
           <label>с <input type="datetime-local" id="tp_start"></label>
           <label>по <input type="datetime-local" id="tp_end"></label>
+          <select id="tp_new_splash"><option value="">— ролик не назначен —</option></select>
           <button onclick="addTech()">＋ Добавить</button>
         </div>
         <table>
-          <thead><tr><th>Начало</th><th>Окончание</th><th>Картинка</th><th>Видео (mp4)</th><th>Заставка</th><th></th></tr></thead>
+          <thead><tr><th>Начало</th><th>Окончание</th><th>Ролик (mp4)</th><th>Статус</th><th></th></tr></thead>
           <tbody id="tp_rows"></tbody>
         </table>
-        <div class="muted">Кнопка «💾» сохраняет даты и имена файлов периода. Кнопка «⬆» загружает файл-заставку: видео конвертируется в mp4; из изображения будет создан mp4 заданной длительности (по умолчанию 60 с). Файлы хранятся в media/.</div>
+        <div class="muted">Все файлы заставок — mp4-видео (изображения конвертируются; при загрузке спрашивается длительность, по умолчанию 60 с). Ролик можно выбрать из существующих заставок или загрузить новый кнопкой «⬆». В окне техзакрытия играется только назначенный ролик.</div>
       </div>
     </section>
 
@@ -315,10 +319,19 @@ function showTab(name){
 
 // ---------- плейлист ----------
 function loadSequence(){
+  if (!videosCache.length) api("api/videos.php?action=list").then(function(vs){ videosCache=vs; }).catch(function(){});
   api("api/playlist.php?action=now").then(function(n){
     var h="", c=n.current;
-    if (n.mode==="sanitary") h+="<p><span class='badge b-queued'>САНИТАРНЫЙ ДЕНЬ</span> Показывается заставка <b>"+esc(c.Playlist[0]||"")+"</b> (watchdog "+c.GeneralWatchdog+" мин)</p>";
-    else if (n.mode==="tech") h+="<p><span class='badge b-error'>ТЕХНИЧЕСКОЕ ЗАКРЫТИЕ</span> "+esc((n.tech&&n.tech.video)||c.Playlist[0]||"")+(n.tech&&n.tech.picture?", картинка "+esc(n.tech.picture):"")+"</p>";
+    function titleFor(file){ var v=videosCache.filter(function(x){return x.file===file;})[0]; return v?v.title:file; }
+    if (n.mode==="sanitary") {
+      var sv = n.sanitary_video || {};
+      h+="<p><span class='badge b-queued'>САНИТАРНЫЙ ДЕНЬ</span> Играет только ролик <b>"+esc(sv.title||titleFor(c.Playlist[0]||""))+"</b> ("+esc(c.Playlist[0]||"")+"), watchdog "+c.GeneralWatchdog+" мин</p>";
+    }
+    else if (n.mode==="tech") {
+      var f = c.Playlist[0]||"";
+      h+="<p><span class='badge b-error'>ТЕХНИЧЕСКОЕ ЗАКРЫТИЕ</span> Играет только ролик <b>"+esc(titleFor(f))+"</b> ("+esc(f)+")"+
+         ((n.tech&&n.tech.splash_video===f)?"":" — назначенный заставки нет, используется резервная")+"</p>";
+    }
     else if (!c.Playlist.length) h+="<p><span class='badge b-inactive'>ПУСТО</span> Нет активных роликов — проверьте расписание.</p>";
     else h+="<p>Сейчас в ротации: <b>основных "+n.main.length+"</b>, <b>дополнительных "+n.additional.length+"</b>. Следующий показ: <b>"+esc(c.Playlist[0]||"∅")+"</b> (watchdog "+c.GeneralWatchdog+" мин)</p>";
     function listBlock(title, arr, cls){
@@ -351,18 +364,53 @@ function loadSequence(){
 }
 
 // ---------- ролики и их расписание ----------
+var pollTimer = null;
 function loadVideos(){
   api("api/videos.php?action=list").then(function(vs){
     videosCache = vs;
     renderVideos();
+    managePolling();
   });
+}
+function managePolling(){
+  var pending = videosCache.some(function(v){ return (v.status||"ready")!=="ready"; });
+  if (pending && !pollTimer) {
+    pollTimer = setInterval(refreshStatuses, 3000);
+    refreshStatuses();
+  } else if (!pending && pollTimer) {
+    clearInterval(pollTimer); pollTimer = null;
+  }
+}
+function refreshStatuses(){
+  api("api/videos.php?action=status").then(function(d){
+    var changed = false;
+    (d.pending||[]).forEach(function(p){
+      for (var i=0;i<videosCache.length;i++){
+        if (videosCache[i].id===p.id && videosCache[i].status!==p.status){ videosCache[i].status=p.status; changed=true; }
+      }
+    });
+    // если очередь пуста и ничего не pending — перечитаем список (worker обновил duration/файл)
+    var queueLeft = (d.queue||[]).length;
+    var pendLeft = (d.pending||[]).length;
+    if (!queueLeft && !pendLeft) {
+      clearInterval(pollTimer); pollTimer=null;
+      loadVideos();
+      if ($("tab-specials") && !$("tab-specials").hidden) loadSpecials();
+    } else {
+      if (changed) renderVideos();
+      if ($("tab-specials") && !$("tab-specials").hidden) paintTechRows();
+    }
+  }).catch(function(){ /* сервер недоступен — попробуем на следующем тике */ });
 }
 function renderVideos(){
   var f = ($("v_filter").value||"").toLowerCase();
   var onlyActive = $("v_only_active").checked;
+  var onlyInactive = $("v_only_inactive").checked;
+  if (onlyActive && onlyInactive) onlyInactive = false; // взаимоисключающие фильтры
   var vs = videosCache.filter(function(v){
     if (f && (v.title+" "+v.file).toLowerCase().indexOf(f)<0) return false;
     if (onlyActive && !isActiveNow(v)) return false;
+    if (onlyInactive && isActiveNow(v)) return false;
     return true;
   });
   $("v_summary").textContent = "Показано "+vs.length+" из "+videosCache.length;
@@ -375,7 +423,8 @@ function renderVideos(){
     return "<tr>"+
       "<td><input value=\""+esc(v.title)+"\" data-id=\""+v.id+"\" class=\"t-in\"></td>"+
       "<td>"+esc(v.file)+"</td>"+
-      "<td><select data-id=\""+v.id+"\" class=\"type-sel\"><option value=\"main\""+(v.type==="main"?" selected":"")+">Основной</option><option value=\"additional\""+(v.type==="additional"?" selected":"")+">Доп.</option></select></td>"+
+      "<td><select data-id=\""+v.id+"\" class=\"type-sel\"><option value=\"main\""+(v.type==="main"?" selected":"")+">Основной</option><option value=\"additional\""+(v.type==="additional"?" selected":"")+">Доп.</option><option value=\"splash\""+(v.type==="splash"?" selected":"")+">Заставка</option></select>"+
+        (v.splash_role?" <span class='muted'>"+(v.splash_role==="splash_weekday"?"сан. день":"техзакрытие")+"</span>":"")+"</td>"+
       "<td><span class='badge b-"+v.status+"'>"+v.status+"</span>"+(v.error?" <span class='muted'>"+esc(v.error)+"</span>":"")+"</td>"+
       "<td>"+fmtDur(v.duration)+"</td>"+
       "<td>"+(nPer? "<span class='badge "+(isActiveNow(v)?"b-active'>активен</span>":"b-inactive'>не активен</span>") : "<span class='badge b-inactive'>нет периодов</span>")+" <ul class='per-list'>"+per+"</ul>"+
@@ -479,6 +528,7 @@ function sdDelete(pid){
 }
 
 // ---------- особые дни ----------
+var weekdaySplashId = null; // id ролика-заставки санитарного дня недели (для замены файла)
 function loadSpecials(){
   api("api/specials.php?action=get").then(function(s){
     specialsCache = s;
@@ -488,55 +538,114 @@ function loadSpecials(){
       return "<li>"+esc(p.start)+" — "+esc(p.end)+
         " <button class='danger small' onclick=\"delWeekdayPeriod('"+p.id+"')\">✕</button></li>";
     }).join("") || "<li class='muted'>нет периодов — санитарные дни по дню недели не действуют</li>";
-    $("sd_list").innerHTML = (s.sanitary_dates||[]).map(function(d){
-      return "<div class='row'>"+esc(d.date)+" <button class='danger small' onclick=\"delSanitary('"+d.id+"')\">✕</button></div>";
-    }).join("") || "<i>нет</i>";
-    $("tp_rows").innerHTML = (s.tech_periods||[]).map(function(t){
-      return "<tr>"+
-        "<td><input type='datetime-local' class='tp-start' data-id='"+t.id+"' value='"+(t.start||"").replace(" ","T")+"'></td>"+
-        "<td><input type='datetime-local' class='tp-end' data-id='"+t.id+"' value='"+(t.end||"").replace(" ","T")+"'></td>"+
-        "<td><input class='tp-pic' data-id='"+t.id+"' size='16' value='"+esc(t.picture||"")+"' placeholder='tech.jpg'></td>"+
-        "<td><input class='tp-vid' data-id='"+t.id+"' size='16' value='"+esc(t.video||"")+"' placeholder='tech.mp4'></td>"+
-        "<td><span class='muted'>"+esc(t.splash_status||"")+"</span> <input type='file' class='tp-file' data-id='"+t.id+"' style='max-width:200px' accept='video/*,image/*'>"+
-        " <button class='small secondary' title='Загрузить заставку (конвертируется в mp4)' onclick=\"uploadTechFile('"+t.id+"')\">⬆</button></td>"+
-        "<td><button class='small' title='Сохранить период' onclick=\"saveTechRow('"+t.id+"')\">💾</button> "+
-        "<button class='danger small' onclick=\"delTech('"+t.id+"')\">✕</button></td></tr>";
-    }).join("") || "<tr><td colspan='6' class='muted'>Периодов техзакрытия нет</td></tr>";
-  });
+    // карточка ролика санитарного дня — из кэша библиотеки (заодно подтянем, если ещё не загружен)
+    var afterVideos = function(){ showWdSplashInfo(); paintTechRows(s); };
+    if (!videosCache.length) {
+      api("api/videos.php?action=list").then(function(vs){ videosCache=vs; afterVideos(); });
+    } else { afterVideos(); }
+    $("tp_rows").innerHTML = "";
+    // выпадающий список заставок техзакрытия + новый период
+    var opts = (s.tech_splashes||[]).map(function(v){
+      return "<option value='"+v.id+"'>"+esc(v.title)+" ("+esc(v.file)+")</option>";
+    }).join("");
+    $("tp_new_splash").innerHTML = "<option value=''>— без ролика (по резервной mp4-заставке) —</option>" + opts;
+  }).catch(function(e){toast(e.message);});
+}
+// Отрисовка строк техзакрытий; статус берём из videosCache (актуален при живом опросе очереди)
+function paintTechRows(s){
+  if (!s) s = specialsCache;
+  if (!s) return;
+  var byId = {};
+  videosCache.forEach(function(v){ byId[v.id]=v; });
+  $("tp_rows").innerHTML = (s.tech_periods||[]).map(function(t){
+    var sel = (s.tech_splashes||[]).map(function(v){
+      return "<option value='"+v.id+"'"+(t.splash_video===v.file?" selected":"")+">"+esc(v.title)+" ("+esc(v.file)+")</option>";
+    }).join("");
+    // определённый id ролика по файлу
+    var vidSel = document.querySelector('.tp-sel[data-id="'+t.id+'"]');
+    var chosenId = vidSel ? vidSel.value : "";
+    var linked = null;
+    (s.tech_splashes||[]).forEach(function(v){ if (v.file===t.splash_video) linked=v; });
+    var rv = (chosenId && byId[chosenId]) || linked;
+    var st = rv ? rv.status : (t.splash_video ? "файл вне библиотеки" : "не назначен");
+    var badgeCls = rv ? ("b-"+rv.status) : "b-inactive";
+    return "<tr>"+
+      "<td><input type='datetime-local' class='tp-start' data-id='"+t.id+"' value='"+(t.start||"").replace(" ","T")+"'></td>"+
+      "<td><input type='datetime-local' class='tp-end' data-id='"+t.id+"' value='"+(t.end||"").replace(" ","T")+"'></td>"+
+      "<td><select class='tp-sel' data-id='"+t.id+"' style='max-width:230px'><option value=''>— не назначен —</option>"+sel+"</select>"+
+      " <input type='file' class='tp-file' data-id='"+t.id+"' style='max-width:170px' accept='video/*,image/*,.mp4'>"+
+      " <button class='small secondary' title='Загрузить новый ролик-заставку (конвертируется в mp4 и будет назначен периоду)' onclick=\"uploadTechFile('"+t.id+"')\">⬆</button></td>"+
+      "<td><span class='badge "+badgeCls+"'>"+esc(st)+"</span></td>"+
+      "<td><button class='small' title='Сохранить период' onclick=\"saveTechRow('"+t.id+"')\">💾</button> "+
+      "<button class='danger small' onclick=\"delTech('"+t.id+"')\">✕</button></td></tr>";
+  }).join("") || "<tr><td colspan='5' class='muted'>Периодов техзакрытия нет</td></tr>";
+}
+function showWdSplashInfo(){
+  var w = videosCache.filter(function(v){return v.splash_role==="splash_weekday";})[0];
+  weekdaySplashId = w ? w.id : null;
+  if (w) {
+    $("sd_title").placeholder = w.title;
+    $("sd_info").innerHTML = "Текущий ролик: <b>"+esc(w.title)+"</b> · файл <code>"+esc(w.file)+
+      "</code> · статус <span class='badge b-"+w.status+"'>"+w.status+"</span>"+
+      (w.error? " <span class='muted'>"+esc(w.error)+"</span>":"");
+    managePolling();
+  } else {
+    $("sd_info").innerHTML = "<span class='badge b-error'>не загружен</span> Загрузите mp4-заставку «санитарный день» — она будет показываться в выбранный день недели.";
+  }
+}
+function uploadSplash(role){
+  var inp = role==="splash_weekday" ? $("sd_file") : null;
+  if (!inp) return;
+  var f = inp.files[0];
+  if (!f) { toast("Сначала выберите видеофайл или изображение"); return; }
+  var fd = new FormData();
+  fd.append("file", f, f.name);
+  fd.append("title", $("sd_title").value || "Санитарный день");
+  fd.append("type", "splash");
+  fd.append("splash_role", role);
+  if (isImageName(f.name)) {
+    var d = prompt("Изображение будет сконвертировано в видео. Длительность ролика в секундах:", "60");
+    if (d === null) return;
+    d = parseInt(d,10); if (!d || d<3) d=3; if (d>3600) d=3600;
+    fd.append("duration", String(d));
+  }
+  fetch("api/videos.php?action=upload", {method:"POST", headers:{"X-CSRF-Token":CSRF}, body:fd, credentials:"same-origin"})
+    .then(function(r){return r.text().then(function(t){
+      var j=null; try{ j=JSON.parse(t); }catch(e){}
+      if (!r.ok) throw new Error(j && j.error ? j.error : ("Ошибка сервера "+r.status+": "+t.slice(0,200)));
+      return j;
+    });})
+    .then(function(){ toast("Заставка загружена, конвертация в mp4 в очереди…"); inp.value=""; loadVideos(); loadSpecials(); })
+    .catch(function(e){ admin_log_js("splash_upload_error", e.message); toast(e.message); });
 }
 function addTech(){
   var s=$("tp_start").value, e=$("tp_end").value;
   if (!s||!e) { toast("Укажите начало и окончание периода"); return; }
-  api("api/specials.php?action=tech-save", {method:"POST", body: JSON.stringify({start:s.replace("T"," "), end:e.replace("T"," ")})})
-    .then(function(){ $("tp_start").value=""; $("tp_end").value=""; loadSpecials(); toast("Период добавлен"); })
+  api("api/specials.php?action=tech-save", {method:"POST", body: JSON.stringify({start:s.replace("T"," "), end:e.replace("T"," "), video_id:$("tp_new_splash").value})})
+    .then(function(){ $("tp_start").value=""; $("tp_end").value=""; $("tp_new_splash").value=""; loadSpecials(); toast("Период добавлен"); })
     .catch(function(e2){toast(e2.message);});
 }
 function saveTechRow(id){
   var si=document.querySelector('.tp-start[data-id="'+id+'"]');
   var ei=document.querySelector('.tp-end[data-id="'+id+'"]');
-  var pi=document.querySelector('.tp-pic[data-id="'+id+'"]');
-  var vi=document.querySelector('.tp-vid[data-id="'+id+'"]');
+  var se=document.querySelector('.tp-sel[data-id="'+id+'"]');
   if (!si.value || !ei.value) { toast("Укажите даты периода"); return; }
   api("api/specials.php?action=tech-save", {method:"POST", body: JSON.stringify({
     id:id, start:si.value.replace("T"," "), end:ei.value.replace("T"," "),
-    picture:pi.value.trim(), video:vi.value.trim()
+    video_id:se ? se.value : ""
   })}).then(function(){ toast("Период сохранён"); loadSpecials(); }).catch(function(e){toast(e.message);});
 }
 function uploadTechFile(id){
   var inp=document.querySelector('.tp-file[data-id="'+id+'"]');
-  if (!inp || !inp.files[0]) { toast("Выберите файл заставки"); return; }
+  if (!inp || !inp.files[0]) { toast("Выберите видеофайл заставки"); return; }
   var f=inp.files[0];
+  var title = prompt("Название нового ролика-заставки:", fileBaseName(f.name));
+  if (title === null) return;
   var fd = new FormData();
-  fd.append("id", id);
   fd.append("file", f, f.name);
-  var si=document.querySelector('.tp-start[data-id="'+id+'"]');
-  var ei=document.querySelector('.tp-end[data-id="'+id+'"]');
-  var pi=document.querySelector('.tp-pic[data-id="'+id+'"]');
-  var vi=document.querySelector('.tp-vid[data-id="'+id+'"]');
-  if (si && si.value) fd.append("start", si.value.replace("T"," "));
-  if (ei && ei.value) fd.append("end", ei.value.replace("T"," "));
-  if (pi) fd.append("picture", pi.value.trim());
-  if (vi) fd.append("video", vi.value.trim());
+  fd.append("title", title || "Техническое закрытие");
+  fd.append("type", "splash");
+  fd.append("splash_role", "splash_tech");
   if (isImageName(f.name)) {
     // загружено изображение — спрашиваем длительность будущего mp4
     var def = 60;
@@ -545,15 +654,25 @@ function uploadTechFile(id){
     d = parseInt(d,10); if (!d || d<3) d=3; if (d>3600) d=3600;
     fd.append("duration", String(d));
   }
-  fetch("api/specials.php?action=tech-save", {method:"POST", headers:{"X-CSRF-Token":CSRF}, body:fd, credentials:"same-origin"})
+  fetch("api/videos.php?action=upload", {method:"POST", headers:{"X-CSRF-Token":CSRF}, body:fd, credentials:"same-origin"})
     .then(function(r){return r.text().then(function(t){
       var j=null; try{ j=JSON.parse(t); }catch(e){}
       if (!r.ok) throw new Error(j && j.error ? j.error : ("Ошибка сервера "+r.status+": "+t.slice(0,200)));
       return j;
     });})
-    .then(function(j){ toast(j.queued ? ("Файл загружен, конвертация в "+j.queued+" в очереди…") : "Сохранено"); loadSpecials(); setTimeout(loadSpecials, 10000); })
+    .then(function(j){
+      // назначить созданный ролик периоду (период остаётся, даже пока ролик в очереди)
+      var si=document.querySelector('.tp-start[data-id="'+id+'"]');
+      var ei=document.querySelector('.tp-end[data-id="'+id+'"]');
+      return api("api/specials.php?action=tech-save", {method:"POST", body: JSON.stringify({
+        id:id, start:si.value.replace("T"," "), end:ei.value.replace("T"," "), video_id:j.video.id
+      })});
+    })
+    .then(function(){ toast("Файл загружен, конвертация в mp4 в очереди…"); loadVideos(); loadSpecials(); setTimeout(loadSpecials, 10000); })
     .catch(function(e){ admin_log_js("tech_upload_error", e.message); toast(e.message); });
 }
+function fileBaseName(n){ return String(n||"").replace(/\.[^.]+$/,""); }
+
 function delTech(id){
   if(!confirm("Удалить период техзакрытия?")) return;
   api("api/specials.php?action=tech-delete", {method:"POST", body: JSON.stringify({id:id})}).then(loadSpecials);
@@ -599,13 +718,6 @@ function delWeekdayPeriod(id){
   if(!confirm("Удалить период действия санитарных дней?")) return;
   api("api/specials.php?action=weekday-period-delete", {method:"POST", body: JSON.stringify({id:id})})
     .then(loadSpecials).catch(function(e){toast(e.message);});
-}
-function addSanitaryDate(){
-  api("api/specials.php?action=sanitary-add", {method:"POST", body: JSON.stringify({date:$("sd_date").value})})
-    .then(function(){ loadSpecials(); }).catch(function(e){toast(e.message);});
-}
-function delSanitary(id){
-  api("api/specials.php?action=sanitary-remove", {method:"POST", body: JSON.stringify({id:id})}).then(loadSpecials);
 }
 
 // ---------- пользователи ----------
