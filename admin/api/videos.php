@@ -25,7 +25,7 @@ function parse_video_period(array $d): array
     return ['start' => $start, 'end' => $end];
 }
 
-/** Найти индекс ролика в массиве по id */
+/** Найти индекс ролика в массиве по id (или -1) */
 function find_video_index(array $videos, string $id): int
 {
     foreach ($videos as $i => $v) {
@@ -33,7 +33,17 @@ function find_video_index(array $videos, string $id): int
             return $i;
         }
     }
-    json_error('Ролик не найден', 404);
+    return -1;
+}
+
+/** Индекс ролика по id или 404 */
+function require_video_index(array $videos, string $id): int
+{
+    $i = require_video_index($videos, $id);
+    if ($i < 0) {
+        json_error('Ролик не найден', 404);
+    }
+    return $i;
 }
 
 switch ($action) {
@@ -127,12 +137,11 @@ switch ($action) {
             if (!in_array($splashRole, ['splash_weekday', 'splash_tech'], true)) {
                 json_error('Для заставки укажите назначение: «санитарный день недели» или «техническое закрытие»');
             }
-            if ($splashRole === 'splash_weekday') {
-                // ролик санитарного дня недели может быть только один
-                foreach (store_read('videos.json') as $v0) {
-                    if (($v0['splash_role'] ?? '') === 'splash_weekday') {
-                        json_error('Ролик-заставка санитарных дней уже существует («' . $v0['title'] . '»). Замените файл в его карточке либо сначала удалите его.', 409);
-                    }
+            // ролик-заставка каждого вида может быть только один; повторная загрузка заменяет файл
+            $replaceId = trim((string)($_POST['replace_id'] ?? ''));
+            foreach (store_read('videos.json') as $v0) {
+                if (($v0['splash_role'] ?? '') === $splashRole && $v0['id'] !== $replaceId) {
+                    json_error('Ролик-заставка уже существует («' . $v0['title'] . '»). Замените файл в его карточке либо сначала удалите его.', 409);
                 }
             }
         }
@@ -194,13 +203,49 @@ switch ($action) {
             'error'      => null,
         ];
         $videos = store_read('videos.json');
-        $videos[] = $video;
+        $replaceId = trim((string)($_POST['replace_id'] ?? ''));
+        $ri = ($type === 'splash' && $replaceId !== '') ? find_video_index($videos, $replaceId) : -1;
+        if ($type === 'splash' && $replaceId !== '' && $ri < 0) {
+            admin_log('upload_failed', ['reason' => 'replace target not found', 'replace_id' => $replaceId]);
+            json_error('Ролик для замены не найден', 404);
+        }
+        if ($ri >= 0) {
+            // замена файла существующего ролика-заставки: имя оставляем прежним (для него могут быть периоды)
+            $finalName = $videos[$ri]['file'];
+            $video = $videos[$ri];
+            $video['title']    = $title;
+            $video['slug']     = slugify($title);
+            $video['kind']     = $isImage ? 'image' : 'video';
+            $video['status']   = 'queued';
+            $video['duration'] = null;
+            $video['error']    = null;
+            $video['req_duration'] = $duration;
+            $videos[$ri] = $video;
+        } else {
+            $video = [
+                'id'         => $id,
+                'title'      => $title,
+                'slug'       => $slug,
+                'file'       => $finalName,          // media/<file> — всегда mp4
+                'type'       => $type,               // основной / дополнительный / заставка
+                'kind'       => $isImage ? 'image' : 'video',
+                'splash_role' => $splashRole,        // splash_weekday | splash_tech (для type=splash)
+                'status'     => 'queued',            // queued -> converting -> ready | error
+                'duration'   => null,
+                'filesize'   => null,
+                'req_duration' => $duration,
+                'schedule'   => [],                  // периоды активности [{id,start,end}]
+                'created'    => date('c'),
+                'error'      => null,
+            ];
+            $videos[] = $video;
+        }
         store_write('videos.json', $videos);
 
         // задача в очередь
         $queue = store_read('queue.json');
         $queue[] = [
-            'video_id' => $id,
+            'video_id' => $video['id'],
             'source'   => $storedSource,
             'filename' => $finalName,
             'kind'     => $isImage ? 'image' : 'video',
@@ -209,10 +254,24 @@ switch ($action) {
         ];
         store_write('queue.json', $queue);
 
-        admin_log('video_upload', ['id' => $id, 'title' => $title, 'orig' => $orig, 'file' => $finalName,
+        admin_log('video_upload', ['id' => $video['id'], 'title' => $title, 'orig' => $orig, 'file' => $finalName,
             'kind' => $video['kind'], 'type' => $type, 'duration_req' => $duration,
-            'size' => $_FILES['file']['size']]);
-        json_out(['ok' => true, 'video' => $video], 201);
+            'replaced' => $ri >= 0, 'size' => $_FILES['file']['size']]);
+
+        // если аплоад инициирован из карточки техзакрытия — назначить файл периоду (splash_video)
+        if (!empty($GLOBALS['tech_assign_period']) && $splashRole === 'splash_tech') {
+            $sp = store_read('specials.json');
+            foreach ($sp['tech_periods'] as &$tp) {
+                if (($tp['id'] ?? '') === $GLOBALS['tech_assign_period']) {
+                    $tp['splash_video'] = $video['file'];
+                }
+            }
+            unset($tp);
+            store_write('specials.json', $sp);
+            admin_log('tech_period_splash_assigned', ['period' => $GLOBALS['tech_assign_period'], 'file' => $video['file']]);
+        }
+
+        json_out(['ok' => true, 'video' => $video], $ri >= 0 ? 200 : 201);
         break;
 
     case 'update':
@@ -222,7 +281,7 @@ switch ($action) {
         $d  = request_json();
         $id = (string)($d['id'] ?? '');
         $videos = store_read('videos.json');
-        $i = find_video_index($videos, $id);
+        $i = require_video_index($videos, $id);
         $changed = [];
         foreach (['title'] as $f) {
             if (isset($d[$f]) && trim((string)$d[$f]) !== '' && $d[$f] !== $videos[$i][$f]) {
@@ -274,7 +333,7 @@ switch ($action) {
         $d  = request_json();
         $p  = parse_video_period($d);
         $videos = store_read('videos.json');
-        $i = find_video_index($videos, (string)($d['id'] ?? ''));
+        $i = require_video_index($videos, (string)($d["id"] ?? ""));
         $p['id'] = new_id();
         $videos[$i]['schedule'][] = $p;
         usort($videos[$i]['schedule'], fn($a, $b) => strcmp($a['start'], $b['start']));
@@ -290,7 +349,7 @@ switch ($action) {
         $d = request_json();
         $p = parse_video_period($d);
         $videos = store_read('videos.json');
-        $i = find_video_index($videos, (string)($d['id'] ?? ''));
+        $i = require_video_index($videos, (string)($d["id"] ?? ""));
         foreach ($videos[$i]['schedule'] as $j => $old) {
             if ($old['id'] === ($d['periodId'] ?? '')) {
                 $p['id'] = $old['id'];
@@ -311,7 +370,7 @@ switch ($action) {
         require_csrf();
         $d = request_json();
         $videos = store_read('videos.json');
-        $i = find_video_index($videos, (string)($d['id'] ?? ''));
+        $i = require_video_index($videos, (string)($d["id"] ?? ""));
         $before = count($videos[$i]['schedule'] ?? []);
         $removed = null;
         foreach ((array)($videos[$i]['schedule'] ?? []) as $per) {
@@ -337,7 +396,7 @@ switch ($action) {
         $id = (string)($d['id'] ?? '');
         $newSlug = slugify((string)($d['slug'] ?? ''));
         $videos = store_read('videos.json');
-        $i = find_video_index($videos, $id);
+        $i = require_video_index($videos, $id);
         $v = $videos[$i];
         $old = root_path('media/' . $v['file']);
         $newName = unique_filename(root_path('media'), $newSlug, 'mp4');
@@ -370,7 +429,7 @@ switch ($action) {
         }
         $id = (string)($_POST['id'] ?? '');
         $videos = store_read('videos.json');
-        $i = find_video_index($videos, $id);
+        $i = require_video_index($videos, $id);
         $v = $videos[$i];
 
         $orig = basename($_FILES['file']['name']);
@@ -425,7 +484,7 @@ switch ($action) {
         $d  = request_json();
         $id = (string)($d['id'] ?? '');
         $videos = store_read('videos.json');
-        $i = find_video_index($videos, $id);
+        $i = require_video_index($videos, $id);
         $v = $videos[$i];
         // защита: уникальные заставки нельзя удалять — они нужны движку
         if (($v['splash_role'] ?? '') === 'splash_weekday') {
