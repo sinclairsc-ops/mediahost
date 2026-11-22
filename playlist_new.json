@@ -1,0 +1,1194 @@
+[
+{
+  "playlist_start": "01.01.2000 00:00",
+  "playlist_end":   "31.12.2099 23:30",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ]
+}
+,
+{
+  "playlist_start": "03.04.2023 00:00",
+  "playlist_end":   "30.04.2023 23:59",
+  "maintenance":    true,
+  "maintenancepicture" : "tech03042023.jpg"
+}
+,
+{
+  "playlist_start": "03.04.2023 00:00",
+  "playlist_end":   "30.04.2023 23:59",
+  "sanitaryday":    false,
+  "maintenance":    true,
+  "main":
+  [
+    "tech03042023.mp4"
+  ]
+}
+,
+{
+  "playlist_start": "10.05.2023 00:00",
+  "playlist_end":   "10.05.2023 23:59",
+  "sanitaryday":    false,
+  "maintenance":    true,
+  "main":
+  [
+    "s_day_10may.mp4"
+  ]
+}
+,
+{
+  "playlist_start": "15.05.2023 00:00",
+  "playlist_end":   "15.05.2023 23:59",
+  "sanitaryday":    false,
+  "maintenance":    true,
+  "main":
+  [
+    "s_day.mp4"
+  ]
+}
+,
+{
+  "playlist_start": "01.09.2023 00:00",
+  "playlist_end":   "31.12.2023 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "01.01.2024 00:00",
+  "playlist_end":   "31.12.2024 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "01.02.2024 00:00",
+  "playlist_end":   "22.03.2024 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"3as2_feb2024.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "23.02.2024 00:00",
+  "playlist_end":   "23.02.2024 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "23feb2024.mp4",
+	"3as2_feb2024.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "20.03.2024 00:00",
+  "playlist_end":   "22.03.2024 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"3as2_feb2024.mp4",
+	"tech042024.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "23.03.2024 00:00",
+  "playlist_end":   "31.03.2024 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"tech042024.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "01.04.2024 00:00",
+  "playlist_end":   "28.04.2024 23:59",
+  "sanitaryday":    false,
+  "maintenance":    true,
+  "main":
+  [
+    "tech042024.mp4"
+  ]
+}
+,
+{
+  "playlist_start": "29.04.2024 00:00",
+  "playlist_end":   "05.05.2024 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "03.05.2024 00:00",
+  "playlist_end":   "26.05.2024 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"childshops_052024.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "18.05.2024 00:00",
+  "playlist_end":   "26.05.2024 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"childshops_052024.mp4",
+	"3as2_may2024.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "27.05.2024 00:00",
+  "playlist_end":   "29.05.2024 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"childshops_052024.mp4",
+	"3as2_may2024.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "30.05.2024 00:00",
+  "playlist_end":   "31.07.2024 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"3as2_july2024.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "31.07.2024 22:00",
+  "playlist_end":   "31.08.2024 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"3as2_august2024.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "16.09.2024 17:30",
+  "playlist_end":   "16.09.2024 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "4_Rules.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "20.09.2024 00:00",
+  "playlist_end":   "20.12.2024 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"childshops_092024.mp4"
+  ] 
+},
+{
+  "playlist_start": "26.10.2024 00:00",
+  "playlist_end":   "04.11.2024 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"childshops_092024.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "28.01.2024 00:00",
+  "playlist_end":   "08.01.2025 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"NYHolidays2025.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "31.12.2024 00:00",
+  "playlist_end":   "31.12.2024 23:59",
+  "sanitaryday":    false,
+  "maintenance":    true,
+  "main":
+  [
+    "s_day.mp4"
+  ]
+}
+,
+{
+  "playlist_start": "01.02.2025 00:00",
+  "playlist_end":   "31.12.2025 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "21.02.2025 00:00",
+  "playlist_end":   "23.02.2025 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+    "giftcards29042022.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+	"23feb_2025.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "28.02.2025 00:00",
+  "playlist_end":   "31.12.2029 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "29.03.2025 00:00",
+  "playlist_end":   "06.04.2025 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "04.04.2025 22:00",
+  "playlist_end":   "06.04.2025 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"tech042025.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "07.04.2025 00:00",
+  "playlist_end":   "05.05.2025 23:59",
+  "sanitaryday":    false,
+  "maintenance":    true,
+  "main":
+  [
+    "tech042025.mp4"
+  ]
+}
+,
+{
+  "playlist_start": "01.06.2025 00:00",
+  "playlist_end":   "31.08.2025 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4"
+  ] 
+},
+{
+  "playlist_start": "01.06.2025 00:00",
+  "playlist_end":   "30.06.2025 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"TeikaBoom_1920х1080.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "01.09.2025 00:00",
+  "playlist_end":   "30.09.2025 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"3as2_sen2025.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "01.10.2025 00:00",
+  "playlist_end":   "20.12.2025 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"restforrest102025_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "01.01.2026 00:00",
+  "playlist_end":   "11.01.2026 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "12.01.2026 00:00",
+  "playlist_end":   "31.02.2026 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "22.01.2026 00:00",
+  "playlist_end":   "22.03.2026 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+    "childshops_012026_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "29.01.2026 00:00",
+  "playlist_end":   "28.02.2026 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+    "childshops_012026_tv.mp4",
+	"icediscount_012026_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "21.02.2026 00:00",
+  "playlist_end":   "23.02.2026 17:30",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+    "childshops_012026_tv.mp4",
+	"23feb2026.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "09.03.2026 00:00",
+  "playlist_end":   "09.03.2026 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+    "childshops_012026_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "18.03.2026 00:00",
+  "playlist_end":   "30.03.2026 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+    "childshops_012026_tv.mp4",
+	"maintenance2026.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "06.04.2026 00:00",
+  "playlist_end":   "30.04.2026 23:59",
+  "sanitaryday":    false,
+  "maintenance":    true,
+  "main":
+  [
+    "maintenance2026.mp4",
+	"presale042026_tv.mp4"
+  ]
+}
+,
+{
+  "playlist_start": "01.05.2026 00:00",
+  "playlist_end":   "25.06.2026 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+    "tv_1_aqua_OKEY_1920x1080_px_1м_video_tv.mp4",
+	"green_maraphon_may2026_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "11.05.2026 00:00",
+  "playlist_end":   "11.05.2026 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+    "tv_1_aqua_OKEY_1920x1080_px_1м_video_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "01.06.2026 00:00",
+  "playlist_end":   "25.06.2026 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+    "tv_1_aqua_OKEY_1920x1080_px_1м_video_tv.mp4",
+	"hotels_jun2026_tv.mp4",
+	"green_maraphon_may2026_tv.mp4",
+	"anketa_062026_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "26.06.2026 00:00",
+  "playlist_end":   "15.07.2026 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"hotels_jun2026_tv.mp4",
+	"green_maraphon_may2026_tv.mp4",
+	"anketa_062026_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "01.07.2026 00:00",
+  "playlist_end":   "15.07.2026 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"hotels_jun2026_tv.mp4",
+	"green_maraphon_may2026_tv.mp4",
+	"anketa_062026_tv.mp4",
+	"TeikaBoom_jul2026.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "01.07.2026 00:00",
+  "playlist_end":   "15.07.2026 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"hotels_jun2026_tv.mp4",
+	"green_maraphon_may2026_tv.mp4",
+	"anketa_062026_tv.mp4",
+	"TeikaBoom_jul2026.mp4",
+	"3as2jul2026_tv.mkv"
+  ] 
+}
+,
+{
+  "playlist_start": "16.07.2026 00:00",
+  "playlist_end":   "28.08.2026 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"hotels_jun2026_tv.mp4",
+	"anketa_062026_tv.mp4",
+	"TeikaBoom_jul2026.mp4",
+	"3as2jul2026_tv.mkv"
+  ] 
+}
+,
+{
+  "playlist_start": "29.08.2026 00:00",
+  "playlist_end":   "31.08.2026 22:00",
+  "sanitaryday":    false,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"hotels_jun2026_tv.mp4",
+	"anketa_062026_tv.mp4",
+	"TeikaBoom_jul2026.mp4",
+	"3as2jul2026_tv.mkv"
+  ] 
+}
+,
+{
+  "playlist_start": "01.09.2026 00:00",
+  "playlist_end":   "10.11.2026 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"hotels_jun2026_tv.mp4",
+	"anketa_062026_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "01.09.2026 00:00",
+  "playlist_end":   "10.11.2026 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"anketa_062026_tv.mp4",
+	"hotels_jun2026_tv.mp4",
+	"3as2_nov2026_tv.mp4",
+	"childticketasgift_nov2026_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "11.11.2026 00:00",
+  "playlist_end":   "25.12.2026 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"anketa_062026_tv.mp4",
+	"3as2_nov2026_tv.mp4",
+	"childticketasgift_nov2026_tv.mp4"
+  ] 
+}
+,
+{
+  "playlist_start": "26.12.2026 00:00",
+  "playlist_end":   "31.12.2026 22:00",
+  "sanitaryday":    true,
+  "main":
+  [
+    "1.mp4",
+    "2_RelaxZone_072023.mp4",
+    "3_Lost_world_072023.mp4",
+    "4_Rules.mp4",
+    "5_Whatchplace_072023.mp4",
+    "6_Dinobar.mp4",
+	"imidge032025_tv.mp4",
+    "08_Animationprogram072022.mp4",
+	"09_lounge_tv.mp4"
+  ],
+  "additional":
+  [
+    "khalva20220511.mp4",
+    "kidsbithday04122021.mp4",
+    "giftcards032025.mp4",
+	"anketa_062026_tv.mp4",
+	"3as2_nov2026_tv.mp4"
+  ] 
+}
+]
