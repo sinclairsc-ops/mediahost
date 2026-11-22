@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Формат ответа, состояние по IP и логика чередования сохранены как в исходной версии,
  * чтобы index.html не требовал изменений и тестирования.
  *
- * Данные: data/videos.json, data/schedule.json, data/specials.json (см. README).
+ * Данные: data/videos.json, data/specials.json (см. README).
  */
 
 require_once __DIR__ . '/src/util.php';
