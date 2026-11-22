@@ -40,6 +40,11 @@
   .grid2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .6rem; margin-bottom: .6rem; }
   .grid2 label { font-size: .85rem; color: #495057; }
   .grid2 input, .grid2 select { width: 100%; box-sizing: border-box; }
+  .ord-cell { cursor: grab; white-space: nowrap; user-select: none; background:#f6f8fb; }
+  .ord-cell:active { cursor: grabbing; }
+  .ord-num { display:inline-block; min-width:1.4rem; font-weight:600; color:#2b7de0; }
+  .ord-grip { color:#9aa5b1; }
+  button.mini { background:#eef2f7; color:#333; border:1px solid #ccd3dd; padding:0 .35rem; font-size:.75rem; border-radius:4px; }
 </style>
 </head>
 <body>
@@ -106,10 +111,12 @@
           <input id="v_filter" placeholder="Фильтр по названию/файлу" oninput="renderVideos()">
           <label><input type="checkbox" id="v_only_active" onchange="renderVideos()"> только активные сейчас</label>
           <label><input type="checkbox" id="v_only_inactive" onchange="renderVideos()"> только неактивные</label>
+          <button class="secondary small" onclick="renumberMains()" title="Пронумеровать основные ролики заново по текущему порядку в таблице">Перенумеровать</button>
           <span class="muted" id="v_summary"></span>
         </div>
+        <div class="muted" style="margin-bottom:.4rem">Порядок показа основных роликов: перетащите строку за значок ⠿ или используйте ▲/▼. Числом показан номер в очереди.</div>
         <table>
-          <thead><tr><th>Название</th><th>Файл</th><th>Тип</th><th>Статус</th><th>Длит.</th><th>Периоды показа</th><th></th></tr></thead>
+          <thead><tr><th>№</th><th>Название</th><th>Файл</th><th>Тип</th><th>Статус</th><th>Длит.</th><th>Периоды показа</th><th></th></tr></thead>
           <tbody id="v_rows"></tbody>
         </table>
       </div>
@@ -413,6 +420,13 @@ function renderVideos(){
     if (onlyInactive && isActiveNow(v)) return false;
     return true;
   });
+  // в таблице основные ролики показываем в порядке очереди показа, остальные — как есть
+  vs.sort(function(a,b){
+    var ma=(a.type==="main"), mb=(b.type==="main");
+    if (ma!==mb) return ma?-1:1;
+    if (ma&&mb){var oa=a.order==null?1e9:+a.order, ob=b.order==null?1e9:+b.order; if(oa!==ob)return oa-ob;}
+    return 0;
+  });
   $("v_summary").textContent = "Показано "+vs.length+" из "+videosCache.length;
   $("v_rows").innerHTML = vs.map(function(v){
     var per = (v.schedule||[]).map(function(p){
@@ -420,7 +434,14 @@ function renderVideos(){
       return "<li>"+esc(p.start)+" — "+esc(p.end)+"</li>";
     }).join("");
     var nPer=(v.schedule||[]).length;
-    return "<tr>"+
+    var isMain = v.type==="main";
+    var numCell = isMain
+      ? "<td class='ord-cell' draggable='true' data-id='"+v.id+"' title='Перетащите, чтобы изменить порядок'>"
+        + "<span class='ord-num'>"+(v.order!=null?v.order:"·")+"</span> <span class='ord-grip'>⠿</span>"
+        + " <button class='mini' onclick='moveMain(\""+v.id+"\",-1)' title='Выше'>▲</button>"
+        + " <button class='mini' onclick='moveMain(\""+v.id+"\",1)' title='Ниже'>▼</button></td>"
+      : "<td class='muted'>—</td>";
+    return "<tr>"+numCell+
       "<td><input value=\""+esc(v.title)+"\" data-id=\""+v.id+"\" class=\"t-in\"></td>"+
       "<td>"+esc(v.file)+"</td>"+
       "<td><select data-id=\""+v.id+"\" class=\"type-sel\"><option value=\"main\""+(v.type==="main"?" selected":"")+">Основной</option><option value=\"additional\""+(v.type==="additional"?" selected":"")+">Доп.</option><option value=\"splash\""+(v.type==="splash"?" selected":"")+">Заставка</option></select>"+
@@ -432,6 +453,51 @@ function renderVideos(){
       "<td><button class='secondary small' onclick=\"saveVideoById('"+v.id+"')\">Сохранить</button> <button class='danger small' onclick=\"delVideo('"+v.id+"')\">✕</button></td>"+
     "</tr>";
   }).join("");
+  bindOrderDnd();
+}
+// ---------- порядок показа основных роликов ----------
+var dragMainId = null;
+function orderedMainIds(){ // id основных роликов в текущем порядке таблицы
+  return Array.prototype.slice.call(document.querySelectorAll("#v_rows .ord-cell"))
+    .map(function(td){ return td.getAttribute("data-id"); });
+}
+function saveOrder(ids){
+  api("api/videos.php?action=reorder", {method:"POST", body: JSON.stringify({ids: ids})})
+    .then(function(){ toast("Порядок сохранён"); loadVideos(); })
+    .catch(function(e){ toast(e.message); loadVideos(); });
+}
+function moveMain(id, dir){
+  var ids = orderedMainIds();
+  var i = ids.indexOf(id);
+  var j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  ids.splice(j, 0, ids.splice(i, 1)[0]);
+  saveOrder(ids);
+}
+function renumberMains(){
+  var ids = orderedMainIds();
+  if (!ids.length) { toast("Нет основных роликов в списке"); return; }
+  saveOrder(ids);
+}
+function bindOrderDnd(){
+  document.querySelectorAll("#v_rows .ord-cell").forEach(function(td){
+    td.addEventListener("dragstart", function(ev){
+      dragMainId = td.getAttribute("data-id");
+      try { ev.dataTransfer.setData("text/plain", dragMainId); ev.dataTransfer.effectAllowed="move"; } catch(e){}
+    });
+    td.addEventListener("dragover", function(ev){ ev.preventDefault(); try{ev.dataTransfer.dropEffect="move";}catch(e){} });
+    td.addEventListener("drop", function(ev){
+      ev.preventDefault();
+      var target = td.getAttribute("data-id");
+      var src = dragMainId || (ev.dataTransfer && ev.dataTransfer.getData("text/plain"));
+      dragMainId = null;
+      if (!src || src === target) return;
+      var ids = orderedMainIds();
+      ids.splice(ids.indexOf(src), 1);
+      ids.splice(ids.indexOf(target) + (ev.offsetY > td.offsetHeight/2 ? 1 : 0), 0, src);
+      saveOrder(ids);
+    });
+  });
 }
 function saveVideoById(id){
   var titleInp = document.querySelector('.t-in[data-id="'+id+'"]');

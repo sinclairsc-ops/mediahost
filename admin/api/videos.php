@@ -39,11 +39,55 @@ function find_video_index(array $videos, string $id): int
 /** Индекс ролика по id или 404 */
 function require_video_index(array $videos, string $id): int
 {
-    $i = require_video_index($videos, $id);
+    $i = find_video_index($videos, $id);
     if ($i < 0) {
-        json_error('Ролик не найден', 404);
+        json_error('Not found', 404);
     }
     return $i;
+}
+
+/** Следующий порядковый номер для основного ролика (максимум существующих + 1) */
+function next_main_order(array $videos): int
+{
+    $max = 0;
+    foreach ($videos as $v) {
+        if (($v['type'] ?? '') === 'main' && isset($v['order'])) {
+            $max = max($max, (int)$v['order']);
+        }
+    }
+    return $max + 1;
+}
+
+/**
+ * Пересчитать поле order у всех основных роликов согласно переданному списку id.
+ * Остальным основным роликам (не указанным в списке) назначаются номера после последних в списке.
+ */
+function apply_main_order(array $videos, array $ids): array
+{
+    $byId = [];
+    foreach ($videos as $i => $v) {
+        $byId[$v['id']] = $i;
+    }
+    $n = 0;
+    foreach ($ids as $id) {
+        $id = (string)$id;
+        if (!isset($byId[$id]) || ($videos[$byId[$id]]['type'] ?? '') !== 'main') {
+            continue;
+        }
+        $videos[$byId[$id]]['order'] = ++$n;
+    }
+    // дописываем не указанные в списке основные ролики — в текущем порядке движка
+    $rest = [];
+    foreach ($videos as $i => $v) {
+        if (($v['type'] ?? '') === 'main' && !in_array($v['id'], $ids, true)) {
+            $rest[] = [$v['order'] ?? PHP_INT_MAX, (string)($v['schedule'][0]['start'] ?? ''), $i];
+        }
+    }
+    usort($rest, fn($a, $b) => [$a[0], $a[1]] <=> [$b[0], $b[1]]);
+    foreach ($rest as $r) {
+        $videos[$r[2]]['order'] = ++$n;
+    }
+    return $videos;
 }
 
 switch ($action) {
@@ -175,6 +219,7 @@ switch ($action) {
         }
 
         // итоговое имя готового ролика: всегда .mp4, читаемое (транслит названия)
+        $videos = store_read('videos.json');
         $mediaDir = root_path('media');
         @mkdir($mediaDir, 0775, true);
         $finalName = unique_filename($mediaDir, $slug, 'mp4');
@@ -197,6 +242,7 @@ switch ($action) {
             'status'     => 'queued',            // queued -> converting -> ready | error
             'duration'   => null,
             'filesize'   => null,
+            'order'        => ($type === 'main') ? next_main_order($videos) : null, // порядок показа (основные)
             'req_duration' => $duration,
             'schedule'   => [],                  // периоды активности [{id,start,end}]
             'created'    => date('c'),
@@ -302,6 +348,12 @@ switch ($action) {
             }
             if ($type !== $videos[$i]['type'] || ($role !== null && $role !== ($videos[$i]['splash_role'] ?? null))) {
                 $changed['type'] = $type;
+                // при смене типа синхронизируем порядок: у основного — назначаем, у остальных — убираем
+                if ($type === 'main' && !isset($videos[$i]['order'])) {
+                    $videos[$i]['order'] = next_main_order($videos);
+                } elseif ($type !== 'main') {
+                    unset($videos[$i]['order']);
+                }
                 $videos[$i]['type'] = $type;
                 if ($role !== null) {
                     $changed['splash_role'] = $role;
@@ -312,6 +364,40 @@ switch ($action) {
         store_write('videos.json', $videos);
         admin_log('video_update', ['id' => $id, 'changes' => $changed]);
         json_out(['ok' => true, 'video' => $videos[$i]]);
+        break;
+
+    // ---------- порядок показа основных роликов ----------
+    case 'reorder':
+        require_auth();
+        require_post();
+        require_csrf();
+        $d    = request_json();
+        $ids  = array_values(array_filter(array_map('strval', (array)($d['ids'] ?? [])), fn($x) => $x !== ''));
+        if (!$ids) {
+            json_error('Не передан список id роликов');
+        }
+        $videos = store_read('videos.json');
+        foreach ($ids as $id) {
+            if (find_video_index($videos, $id) < 0) {
+                json_error('Ролик не найден: ' . $id, 404);
+            }
+        }
+        $before = [];
+        foreach ($videos as $v) {
+            if (($v['type'] ?? '') === 'main') {
+                $before[$v['id']] = $v['order'] ?? null;
+            }
+        }
+        $videos = apply_main_order($videos, $ids);
+        store_write('videos.json', $videos);
+        $after = [];
+        foreach ($videos as $v) {
+            if (($v['type'] ?? '') === 'main') {
+                $after[$v['id']] = $v['order'] ?? null;
+            }
+        }
+        admin_log('videos_reorder', ['ids' => $ids, 'before' => $before, 'after' => $after]);
+        json_out(['ok' => true, 'order' => $after]);
         break;
 
     // ---------- расписание ролика: список периодов активности ----------

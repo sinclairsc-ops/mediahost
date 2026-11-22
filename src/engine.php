@@ -67,9 +67,26 @@ class PlaylistEngine
                 }
             }
         }
+        // Порядок показа:
+        //  - основные ролики — в порядке, заданном администратором (поле order;
+        //    у роликов без order — по началу активного периода, затем по порядку в массиве);
+        //  - дополнительные — случайный выбор при показе, порядок здесь существенной роли не имеет.
         usort($out, function ($a, $b) {
-            $c = strcmp($a['period']['start'], $b['period']['start']);
-            return $c !== 0 ? $c : ($a['pos'] <=> $b['pos']);
+            $oa = $a['video']['order'] ?? null;
+            $ob = $b['video']['order'] ?? null;
+            if ($oa !== null || $ob !== null) {
+                $ka = $oa === null ? PHP_INT_MAX : (int)$oa;
+                $kb = $ob === null ? PHP_INT_MAX : (int)$ob;
+                if ($ka !== $kb) {
+                    return $ka <=> $kb;
+                }
+            } else {
+                $c = strcmp($a['period']['start'], $b['period']['start']);
+                if ($c !== 0) {
+                    return $c;
+                }
+            }
+            return $a['pos'] <=> $b['pos'];
         });
         return $out;
     }
