@@ -1,0 +1,264 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/util.php';
+
+/**
+ * Движок формирования плейлиста.
+ *
+ * Совместимость со старым playlist.php:
+ *  - формат ответа: {"Playlist":[...], "SanitaryDay":bool, "GeneralWatchdog":N, ["maintenance":true], ["maintenancepicture":"..."]}
+ *  - состояние чередования основных/дополнительных по IP: serialize([mainIdx, wasAdditional])
+ *  - watchdog = round(duration_min + 1.5), минимум 3 (как GenerateWatchDog в старом коде)
+ *  - санитарный день = понедельник (N==1), если в периоде sanitaryday=true
+ *
+ * Новая модель данных (data/*.json):
+ *  videos.json   — библиотека роликов {id,title,slug,file,type,duration,status,...}
+ *  schedule.json — периоды ротации {id,start,end,sanitaryday,main:[videoId],additional:[videoId]}
+ *  specials.json — {tech_periods:[{id,start,end,picture}], sanitary_dates:[{id,date}], weekday_sanitary:{enabled,weekday}}
+ */
+class PlaylistEngine
+{
+    private array $videos;     // id => video
+    private array $schedule;
+    private array $specials;
+
+    public function __construct()
+    {
+        $this->videos    = [];
+        foreach (store_read('videos.json') as $v) {
+            $this->videos[$v['id']] = $v;
+        }
+        $this->schedule = store_read('schedule.json');
+        $this->specials = store_read('specials.json');
+    }
+
+    /** Файл ролика по id (для отдачи плееру) */
+    public function videoFile(string $id): ?string
+    {
+        return $this->videos[$id]['file'] ?? null;
+    }
+
+    /**
+     * Основной вход для playlist.php. Возвращает массив для json_encode.
+     * $ip — адрес телевизора, $now — текущее время (можно подставить для теста).
+     */
+    public function buildForClient(string $ip, ?DateTimeInterface $now = null): array
+    {
+        $now = $now ?? new DateTimeImmutable('now', new DateTimeZone(cfg()['timezone']));
+        $state = $this->loadState($ip);
+        $res = $this->build($now, $state, true);
+        $this->saveState($ip, $res['state']);
+        unset($res['state']);
+        return $res['payload'];
+    }
+
+    /**
+     * Предпросмотр без изменения состояния (для админки).
+     * $advance — сколько шагов проигрывания смоделировать вперёд.
+     */
+    public function preview(DateTimeInterface $now, string $ip = 'preview', int $advance = 0): array
+    {
+        $now = DateTimeImmutable::createFromInterface($now);
+        $state = [0, 0];
+        $items = [];
+        for ($i = 0; $i <= $advance; $i++) {
+            $r = $this->build($now, $state, true);
+            $state = $r['state'];
+            $p = $r['payload'];
+            $items[] = $p;
+            if ($i < $advance) {
+                // сдвинем время на длительность показанного ролика
+                $dur = max(3, (int)round(($p['GeneralWatchdog'] ?? 3)));
+                $now = $now->modify("+{$dur} minutes");
+            }
+        }
+        return $items;
+    }
+
+    /** Внутренний расчёт одного "слота" показа */
+    private function build(DateTimeImmutable $now, array $state, bool $useRandom): array
+    {
+        $splash = cfg()['splashes'];
+
+        // 1. Период технического закрытия — имеет наивысший приоритет
+        foreach ($this->specials['tech_periods'] ?? [] as $tp) {
+            if ($this->inRange($now, $tp['start'], $tp['end'])) {
+                // заставка: видео периода (если задано), иначе картинка + дефолтное видео-заставка
+                $video = !empty($tp['video']) ? $tp['video'] : $splash['tech']['file'];
+                $payload = [
+                    'Playlist' => [$video],
+                    'SanitaryDay' => false,
+                    'GeneralWatchdog' => $this->watchdogForFile($video),
+                    'maintenance' => true,
+                ];
+                if (!empty($tp['picture'])) {
+                    $payload['maintenancepicture'] = $tp['picture'];
+                }
+                return ['state' => $state, 'payload' => $payload];
+            }
+        }
+
+        // 2. Санитарный день: произвольные даты или день недели внутри периода с sanitaryday=true
+        $period = $this->activePeriod($now); // может быть null
+        $isSanitary = false;
+        foreach ($this->specials['sanitary_dates'] ?? [] as $sd) {
+            if ($sd['date'] === $now->format('Y-m-d')) {
+                $isSanitary = true;
+                break;
+            }
+        }
+        if (!$isSanitary && $period && !empty($period['sanitaryday'])) {
+            $wd = (int)($this->specials['weekday_sanitary']['weekday'] ?? 1);
+            if ((int)$now->format('N') === $wd) {
+                $isSanitary = true;
+            }
+        }
+        if ($isSanitary) {
+            // состояние не крутим — показываем заставку
+            return [
+                'state' => $state,
+                'payload' => [
+                    'Playlist' => [$splash['sanitary']['file']],
+                    'SanitaryDay' => true,
+                    'GeneralWatchdog' => 4, // как в старом коде для санитарного дня
+                ],
+            ];
+        }
+
+        // 3. Обычная ротация основного/дополнительного списка активного периода
+        $main = array_values(array_filter(
+            array_map(fn($id) => $this->videoFile($id), $period['main'] ?? []),
+            fn($f) => $f !== null
+        ));
+        $additional = array_values(array_filter(
+            array_map(fn($id) => $this->videoFile($id), $period['additional'] ?? []),
+            fn($f) => $f !== null
+        ));
+
+        $wasAdditional = (int)($state[1] ?? 0);
+        $mainIdx       = (int)($state[0] ?? 0);
+        $playlist = [];
+
+        if (!$main && !$additional) {
+            // нет активного периода/роликов — пустой список, плеер покажет дефолт
+            return [
+                'state' => $state,
+                'payload' => [
+                    'Playlist' => [],
+                    'SanitaryDay' => false,
+                    'GeneralWatchdog' => cfg()['watchdog_default'],
+                ],
+            ];
+        }
+
+        // чередование: после основного идёт дополнительный (если есть), иначе основной
+        if ($wasAdditional === 1 && count($additional)) {
+            $idx = $useRandom
+                ? random_int(0, count($additional) - 1)
+                : ($mainIdx % count($additional));
+            $playlist[0] = $additional[$idx];
+            $newWasAdd = 0;
+        } else {
+            if ($mainIdx >= count($main)) {
+                $mainIdx = 0;
+            }
+            $playlist[0] = $main[$mainIdx];
+            $mainIdx++;
+            $newWasAdd = count($additional) ? 1 : 0;
+        }
+
+        $state = [$mainIdx % max(1, count($main)), $newWasAdd];
+
+        return [
+            'state' => $state,
+            'payload' => [
+                'Playlist' => $playlist,
+                'SanitaryDay' => false,
+                'GeneralWatchdog' => $this->watchdogFor($playlist[0]),
+            ],
+        ];
+    }
+
+    /** Активный период ротации на момент $now (последний совпадающий — как в старом коде) */
+    public function activePeriod(DateTimeInterface $now): ?array
+    {
+        $found = null;
+        foreach ($this->schedule as $p) {
+            if ($this->inRange($now, $p['start'], $p['end'])) {
+                $found = $p;
+            }
+        }
+        return $found;
+    }
+
+    private function inRange(DateTimeInterface $now, string $start, string $end): bool
+    {
+        $tz = new DateTimeZone(cfg()['timezone']);
+        $s = new DateTimeImmutable($start, $tz);
+        $e = new DateTimeImmutable($end, $tz);
+        return $now >= $s && $now < $e;
+    }
+
+    /** Watchdog по метаданным ролика (без вызова ffmpeg в HTTP-пути) */
+    private function watchdogFor(?string $file): int
+    {
+        return $this->watchdogForFile($file);
+    }
+
+    /** Watchdog по имени файла: из videos.json, иначе — прямой ffprobe с кэшем в cache/ */
+    private function watchdogForFile(?string $file): int
+    {
+        if ($file === null) {
+            return cfg()['watchdog_default'];
+        }
+        foreach ($this->videos as $v) {
+            if ($v['file'] === $file && !empty($v['duration'])) {
+                return max(3, (int)round($v['duration'] / 60 + 1.5));
+            }
+        }
+        // заставочные файлы (s_day.mp4, tech*.mp4) не в библиотеке — измерим один раз и закэшируем
+        $cacheFile = root_path('cache/wd_' . md5($file) . '.txt');
+        if (is_file($cacheFile)) {
+            $dur = (float)file_get_contents($cacheFile);
+        } else {
+            require_once __DIR__ . '/ffmpeg.php';
+            $path = root_path('media/' . $file);
+            $dur = is_file($path) ? (FfmpegService::ffprobeDuration($path) ?? 0.0) : 0.0;
+            @mkdir(root_path('cache'), 0775, true);
+            file_put_contents($cacheFile, (string)$dur);
+        }
+        if ($dur <= 0) {
+            return cfg()['watchdog_default'];
+        }
+        return max(3, (int)round($dur / 60 + 1.5));
+    }
+
+    // ---------- Состояние по IP (совместимо со старым format serialize([int,int])) ----------
+
+    private function stateFile(string $ip): string
+    {
+        // защитимся от слэшей/точек в имени
+        $safe = preg_replace('/[^0-9a-fA-F.:_]/', '_', $ip);
+        return root_path("data/state/state_{$safe}.dat");
+    }
+
+    private function loadState(string $ip): array
+    {
+        $f = $this->stateFile($ip);
+        if (is_file($f)) {
+            $st = @unserialize(file_get_contents($f));
+            if (is_array($st) && count($st) >= 2) {
+                return [(int)$st[0], (int)$st[1]];
+            }
+        }
+        return [0, 0];
+    }
+
+    private function saveState(string $ip, array $state): void
+    {
+        $f = $this->stateFile($ip);
+        @mkdir(dirname($f), 0775, true);
+        file_put_contents($f, serialize($state), LOCK_EX);
+    }
+}
