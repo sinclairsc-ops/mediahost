@@ -4,29 +4,30 @@ declare(strict_types=1);
 require_once __DIR__ . '/util.php';
 
 /**
- * Движок формирования плейлиста (модель v2).
+ * Движок формирования плейлиста (модель v3).
  *
  * Совместимость со старым playlist.php:
- *  - формат ответа: {"Playlist":[...], "SanitaryDay":bool, "GeneralWatchdog":N, ["maintenance":true], ["maintenancepicture":"..."]}
+ *  - формат ответа: {"Playlist":[...], "SanitaryDay":bool, "GeneralWatchdog":N, ["maintenance":true]}
  *  - состояние чередования основных/дополнительных по IP: serialize([mainIdx, wasAdditional])
  *  - watchdog = round(duration_min + 1.5), минимум 3 (как GenerateWatchDog в старом коде)
  *
- * Модель данных v2 (расписание хранится НА РОЛИКЕ):
- *  videos.json   — [{id,title,slug,file,type:main|additional,duration,status,
- *                    schedule:[{id,start,end}, ...]}]  — список периодов активности ролика
+ * Модель данных v3 (расписание хранится НА РОЛИКЕ; заставки — тоже ролики):
+ *  videos.json   — [{id,title,slug,file,type:main|additional|splash,duration,status,
+ *                    splash_role:splash_weekday|splash_tech (для type=splash),
+ *                    schedule:[{id,start,end}, ...]}]  — периоды активности ролика
  *  specials.json — {
- *      tech_periods:    [{id,start,end,picture,video}],          // техзакрытие (наивысший приоритет)
- *      sanitary_dates:  [{id,date}],                             // произвольные санитарные дни
- *      weekday_periods: [{id,start,end}],                        // периоды действия санитарных дней по дню недели
- *      weekday_sanitary:{enabled,weekday}                        // какой день недели считать санитарным
+ *      tech_periods:    [{id,start,end,splash_video}],  // окна техзакрытия (наивысший приоритет)
+ *      weekday_sanitary:{enabled,weekday}               // какой день недели считать санитарным
  *  }
+ *  Санитарный день недели показывает ролик с splash_role=splash_weekday и активным периодом на сегодня.
+ *  Произвольная санитарная дата = период техзакрытия на один день с нужным роликом.
  *  Приоритеты: техзакрытие > санитарный день > ротация активных роликов.
  *  Основные ролики идут по порядку (сортировка по началу периода, затем по позиции в библиотеке),
  *  дополнительные выбираются случайным образом из активных на текущий момент.
  */
 class PlaylistEngine
 {
-    private array $videos;     // id => video
+    private array $videos;     // id => video (порядок = позиция в библиотеке)
     private array $specials;
 
     public function __construct()
@@ -37,8 +38,6 @@ class PlaylistEngine
         }
         $this->specials = store_read('specials.json') + [
             'tech_periods'     => [],
-            'sanitary_dates'   => [],
-            'weekday_periods'  => [],
             'weekday_sanitary' => ['enabled' => true, 'weekday' => 1],
         ];
     }
@@ -49,12 +48,13 @@ class PlaylistEngine
         return $this->videos[$id]['file'] ?? null;
     }
 
-    /** Активные на момент $now ролики заданного типа, отсортированные по порядку показа */
-    public function activeVideos(DateTimeInterface $now, string $type): array
+    /** Активные на момент $now ролики с указанными типами, отсортированные по порядку показа */
+    public function activeVideos(DateTimeInterface $now, string|array $types): array
     {
+        $types = (array)$types;
         $out = [];
         foreach ($this->videos as $pos => $v) {
-            if (($v['type'] ?? 'main') !== $type) {
+            if (!in_array($v['type'] ?? 'main', $types, true)) {
                 continue;
             }
             if (($v['status'] ?? 'ready') !== 'ready') {
@@ -62,60 +62,40 @@ class PlaylistEngine
             }
             foreach ((array)($v['schedule'] ?? []) as $p) {
                 if ($this->inRange($now, (string)$p['start'], (string)$p['end'])) {
-                    $out[] = ['video' => $v, 'start' => $p['start'], 'pos' => $pos];
+                    $out[] = ['video' => $v, 'period' => $p, 'pos' => $pos];
                     break;
                 }
             }
         }
-        usort($out, fn($a, $b) => [$a['start'], $a['pos']] <=> [$b['start'], $b['pos']]);
+        usort($out, function ($a, $b) {
+            $c = strcmp($a['period']['start'], $b['period']['start']);
+            return $c !== 0 ? $c : ($a['pos'] <=> $b['pos']);
+        });
         return $out;
     }
 
-    /** Период(ы) активности конкретного ролика, накрывающие $now */
-    public function activePeriodsOf(array $video, DateTimeInterface $now): array
-    {
-        $res = [];
-        foreach ((array)($video['schedule'] ?? []) as $p) {
-            if ($this->inRange($now, (string)$p['start'], (string)$p['end'])) {
-                $res[] = $p;
-            }
-        }
-        return $res;
-    }
-
     /**
-     * Основной вход для playlist.php. Возвращает массив для json_encode.
-     * $ip — адрес телевизора, $now — текущее время (можно подставить для теста).
+     * Сформировать ответ для клиента (ТВ) на текущий момент, обновить состояние по IP.
      */
-    public function buildForClient(string $ip, ?DateTimeInterface $now = null): array
+    public function buildForClient(string $clientIp, DateTimeImmutable $now): array
     {
-        $now = $now ?? new DateTimeImmutable('now', new DateTimeZone(cfg()['timezone']));
-        $state = $this->loadState($ip);
+        $state = $this->loadState($clientIp);
         $res = $this->build($now, $state, true);
-        $this->saveState($ip, $res['state']);
-        unset($res['state']);
+        $this->saveState($clientIp, $res['state']);
         return $res['payload'];
     }
 
-    /**
-     * Предпросмотр без изменения состояния (для админки).
-     * $advance — сколько шагов проигрывания смоделировать вперёд.
-     */
-    public function preview(DateTimeInterface $now, string $ip = 'preview', int $advance = 0): array
+    /** Только предпросмотр без изменения состояния (для админки) */
+    public function preview(DateTimeImmutable $now, string $clientIp = '__preview__', int $extra = 0): array
     {
-        $now = DateTimeImmutable::createFromInterface($now);
-        $state = [0, 0];
         $items = [];
-        for ($i = 0; $i <= $advance; $i++) {
-            $r = $this->build($now, $state, true);
-            $state = $r['state'];
-            $p = $r['payload'];
-            $items[] = $p;
-            if ($i < $advance) {
-                // сдвинем время на длительность показанного ролика
-                $dur = max(3, (int)round(($p['GeneralWatchdog'] ?? 3)));
-                $now = $now->modify("+{$dur} minutes");
-            }
+        $state = $this->loadState($clientIp);
+        $t = $now;
+        for ($i = 0; $i <= $extra; $i++) {
+            $res = $this->build($t, $state, false);
+            $items[] = $res['payload'];
+            $state = $res['state'];
+            $t = $t->modify('+' . max(1, $res['payload']['GeneralWatchdog']) . ' minutes');
         }
         return $items;
     }
@@ -123,55 +103,40 @@ class PlaylistEngine
     /** Внутренний расчёт одного "слота" показа */
     private function build(DateTimeImmutable $now, array $state, bool $useRandom): array
     {
-        $splash = cfg()['splashes'];
-
-        // 1. Период технического закрытия — имеет наивысший приоритет
+        // 1. Период технического закрытия — наивысший приоритет: играется только ролик техзакрытия.
         foreach ($this->specials['tech_periods'] ?? [] as $tp) {
-            if ($this->inRange($now, $tp['start'], $tp['end'])) {
-                // заставка: видео периода (если задано), иначе картинка + дефолтное видео-заставка
-                $video = !empty($tp['video']) ? $tp['video'] : $splash['tech']['file'];
-                $payload = [
-                    'Playlist' => [$video],
-                    'SanitaryDay' => false,
-                    'GeneralWatchdog' => $this->watchdogForFile($video),
-                    'maintenance' => true,
+            if ($this->inRange($now, (string)$tp['start'], (string)$tp['end'])) {
+                $video = $this->splashFileForPeriod($tp);
+                return [
+                    'state' => $state,
+                    'payload' => [
+                        'Playlist' => [$video],
+                        'SanitaryDay' => false,
+                        'GeneralWatchdog' => $this->watchdogForFile((string)$video),
+                        'maintenance' => true,
+                    ],
                 ];
-                if (!empty($tp['picture'])) {
-                    $payload['maintenancepicture'] = $tp['picture'];
-                }
-                return ['state' => $state, 'payload' => $payload];
             }
         }
 
-        // 2. Санитарный день: произвольные даты ИЛИ день недели внутри периода действия сан. дней
-        $isSanitary = false;
-        foreach ($this->specials['sanitary_dates'] ?? [] as $sd) {
-            if ($sd['date'] === $now->format('Y-m-d')) {
-                $isSanitary = true;
-                break;
-            }
-        }
-        if (!$isSanitary && !empty($this->specials['weekday_sanitary']['enabled'])) {
+        // 2. Санитарный день недели: показываем единственный ролик-заставку splash_weekday,
+        //    у которого есть активный период на сейчас (расписание как у обычных роликов).
+        if (!empty($this->specials['weekday_sanitary']['enabled'])) {
             $wd = (int)($this->specials['weekday_sanitary']['weekday'] ?? 1);
             if ((int)$now->format('N') === $wd) {
-                foreach ($this->specials['weekday_periods'] ?? [] as $wp) {
-                    if ($this->inRange($now, (string)$wp['start'], (string)$wp['end'])) {
-                        $isSanitary = true;
-                        break;
-                    }
+                $san = $this->weekdaySplashVideo($now);
+                if ($san !== null) {
+                    // состояние ротации не крутим — показываем заставку
+                    return [
+                        'state' => $state,
+                        'payload' => [
+                            'Playlist' => [$san['file']],
+                            'SanitaryDay' => true,
+                            'GeneralWatchdog' => max(3, $this->watchdogForFile($san['file'])),
+                        ],
+                    ];
                 }
             }
-        }
-        if ($isSanitary) {
-            // состояние не крутим — показываем заставку
-            return [
-                'state' => $state,
-                'payload' => [
-                    'Playlist' => [$splash['sanitary']['file']],
-                    'SanitaryDay' => true,
-                    'GeneralWatchdog' => 4, // как в старом коде для санитарного дня
-                ],
-            ];
         }
 
         // 3. Обычная ротация: основные ролики по порядку + случайные дополнительные (по своим периодам)
@@ -230,36 +195,86 @@ class PlaylistEngine
     public function context(DateTimeInterface $now): array
     {
         foreach ($this->specials['tech_periods'] ?? [] as $tp) {
-            if ($this->inRange($now, $tp['start'], $tp['end'])) {
-                return ['mode' => 'tech', 'tech' => $tp];
+            if ($this->inRange($now, (string)$tp['start'], (string)$tp['end'])) {
+                return ['mode' => 'tech', 'tech' => $tp + ['splash_video' => $this->splashFileForPeriod($tp)]];
             }
         }
-        $sanitaryReason = null;
-        foreach ($this->specials['sanitary_dates'] ?? [] as $sd) {
-            if ($sd['date'] === $now->format('Y-m-d')) {
-                $sanitaryReason = 'date';
-                break;
-            }
-        }
-        if ($sanitaryReason === null && !empty($this->specials['weekday_sanitary']['enabled'])) {
+        if (!empty($this->specials['weekday_sanitary']['enabled'])) {
             $wd = (int)($this->specials['weekday_sanitary']['weekday'] ?? 1);
             if ((int)$now->format('N') === $wd) {
-                foreach ($this->specials['weekday_periods'] ?? [] as $wp) {
-                    if ($this->inRange($now, (string)$wp['start'], (string)$wp['end'])) {
-                        $sanitaryReason = 'weekday';
-                        break;
-                    }
+                $san = $this->weekdaySplashVideo($now);
+                if ($san !== null) {
+                    return ['mode' => 'sanitary', 'reason' => 'weekday', 'video' => $san];
                 }
             }
-        }
-        if ($sanitaryReason !== null) {
-            return ['mode' => 'sanitary', 'reason' => $sanitaryReason];
         }
         return [
             'mode'   => 'rotation',
             'main'       => $this->activeVideos($now, 'main'),
             'additional' => $this->activeVideos($now, 'additional'),
         ];
+    }
+
+    /** Единственный ролик-заставка санитарных дней недели, активный на момент $now */
+    private function weekdaySplashVideo(DateTimeInterface $now): ?array
+    {
+        foreach ($this->videos as $v) {
+            if (($v['type'] ?? '') === 'splash' && ($v['splash_role'] ?? '') === 'splash_weekday'
+                && ($v['status'] ?? '') === 'ready' && !empty($v['file'])) {
+                foreach ((array)($v['schedule'] ?? []) as $p) {
+                    if ($this->inRange($now, (string)$p['start'], (string)$p['end'])) {
+                        return $v;
+                    }
+                }
+                return null; // заставка есть, но сегодня вне периодов действия — обычная ротация
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Файл mp4-заставки для периода техзакрытия:
+     *  1) явно назначенный периоду ролик (splash_video, легаси video);
+     *  2) любой готовый splash_tech, у которого есть период, покрытый окном техзакрытия;
+     *  3) резервный файл из config ('splashes').
+     */
+    private function splashFileForPeriod(array $tp): ?string
+    {
+        foreach ([$tp['splash_video'] ?? null, $tp['video'] ?? null] as $f) {
+            if (is_string($f) && $f !== '' && $this->videoReadyByFile($f)) {
+                return $f;
+            }
+        }
+        $tz = new DateTimeZone(cfg()['timezone']);
+        $winStart = new DateTimeImmutable($tp['start'], $tz);
+        $winEnd   = new DateTimeImmutable($tp['end'], $tz);
+        foreach ($this->videos as $v) {
+            if (($v['type'] ?? '') !== 'splash' || ($v['splash_role'] ?? '') !== 'splash_tech') {
+                continue;
+            }
+            if (($v['status'] ?? '') !== 'ready' || empty($v['file'])) {
+                continue;
+            }
+            foreach ((array)($v['schedule'] ?? []) as $p) {
+                $s = new DateTimeImmutable($p['start'], $tz);
+                $e = new DateTimeImmutable($p['end'], $tz);
+                if ($s < $winEnd && $e > $winStart) {
+                    return $v['file'];
+                }
+            }
+        }
+        return cfg()['splashes']['tech']['file'] ?? null;
+    }
+
+    /** Готов ли файл к показу: есть в библиотеке со статусом ready либо лежит в media/ */
+    private function videoReadyByFile(string $file): bool
+    {
+        foreach ($this->videos as $v) {
+            if ($v['file'] === $file) {
+                return ($v['status'] ?? 'ready') === 'ready';
+            }
+        }
+        return is_file(root_path('media/' . $file));
     }
 
     private function inRange(DateTimeInterface $now, string $start, string $end): bool
@@ -270,46 +285,33 @@ class PlaylistEngine
         return $now >= $s && $now < $e;
     }
 
-    /** Watchdog по метаданным ролика (без вызова ffmpeg в HTTP-пути) */
-    private function watchdogFor(?string $file): int
+    /** Watchdog в минутах по имени файла (duration из videos.json), как в старом GenerateWatchDog */
+    private function watchdogForFile(string $file): int
     {
-        return $this->watchdogForFile($file);
-    }
-
-    /** Watchdog по имени файла: из videos.json, иначе — прямой ffprobe с кэшем в cache/ */
-    private function watchdogForFile(?string $file): int
-    {
-        if ($file === null) {
-            return cfg()['watchdog_default'];
-        }
         foreach ($this->videos as $v) {
-            if ($v['file'] === $file && !empty($v['duration'])) {
-                return max(3, (int)round($v['duration'] / 60 + 1.5));
+            if ($v['file'] === $file) {
+                return $this->watchdogValue($v['duration'] ?? null);
             }
         }
-        // заставочные файлы (s_day.mp4, tech*.mp4) не в библиотеке — измерим один раз и закэшируем
-        $cacheFile = root_path('cache/wd_' . md5($file) . '.txt');
-        if (is_file($cacheFile)) {
-            $dur = (float)file_get_contents($cacheFile);
-        } else {
-            require_once __DIR__ . '/ffmpeg.php';
-            $path = root_path('media/' . $file);
-            $dur = is_file($path) ? (FfmpegService::ffprobeDuration($path) ?? 0.0) : 0.0;
-            @mkdir(root_path('cache'), 0775, true);
-            file_put_contents($cacheFile, (string)$dur);
-        }
-        if ($dur <= 0) {
-            return cfg()['watchdog_default'];
-        }
-        return max(3, (int)round($dur / 60 + 1.5));
+        return cfg()['watchdog_default'];
     }
 
-    // ---------- Состояние по IP (совместимо со старым format serialize([int,int])) ----------
+    private function watchdogFor(?string $file): int
+    {
+        return $file === null ? cfg()['watchdog_default'] : $this->watchdogForFile($file);
+    }
+
+    private function watchdogValue($durationSec): int
+    {
+        if (!$durationSec) {
+            return cfg()['watchdog_default'];
+        }
+        return max(3, (int)round(((float)$durationSec) / 60 + 1.5));
+    }
 
     private function stateFile(string $ip): string
     {
-        // защитимся от слэшей/точек в имени
-        $safe = preg_replace('/[^0-9a-fA-F.:_]/', '_', $ip);
+        $safe = preg_replace('/[^A-Za-z0-9_.:-]/', '_', $ip);
         return root_path("data/state/state_{$safe}.dat");
     }
 

@@ -39,10 +39,11 @@ return [
     // Максимальный размер загрузки, байт
     'max_upload_size' => 2 * 1024 * 1024 * 1024,
 
-    // Заставки (splash), показываются вместо обычного плейлиста
+    // Резервные файлы заставок (модель v3: заставки — обычные ролики type=splash
+    // с собственным расписанием; эти пути используются только если ролик-заставка не найден)
     'splashes' => [
-        'sanitary' => ['file' => 's_day.mp4',  'picture' => 's_day.jpg'],
-        'tech'     => ['file' => 'tech.mp4',   'picture' => 'tech03042023.jpg'],
+        'sanitary' => ['file' => 's_day.mp4'],
+        'tech'     => ['file' => 'tech.mp4'],
     ],
 
     // Watchdog: round(duration_min + 1.5), минимум 3 — как в старом playlist.php

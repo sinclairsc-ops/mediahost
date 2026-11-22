@@ -19,7 +19,7 @@ switch ($action) {
                 'title'  => $e['video']['title'],
                 'file'   => $e['video']['file'],
                 'periods'=> array_values(array_map(fn($p) => ['start' => $p['start'], 'end' => $p['end']],
-                    array_filter((array)($e['video']['schedule'] ?? []), fn($p) => true))),
+                    (array)($e['video']['schedule'] ?? []))),
             ], $entries);
         };
         json_out([
@@ -29,6 +29,7 @@ switch ($action) {
             'main'       => $brief($ctx['main'] ?? []),
             'additional' => $brief($ctx['additional'] ?? []),
             'tech'       => $ctx['tech'] ?? null,
+            'sanitary_video' => isset($ctx['video']) ? ['title' => $ctx['video']['title'], 'file' => $ctx['video']['file']] : null,
         ]);
         break;
 
@@ -42,10 +43,6 @@ switch ($action) {
         foreach (store_read('videos.json') as $v) {
             $videosByFile[$v['file']] = $v;
         }
-        $splashFiles = [];
-        foreach (cfg()['splashes'] as $name => $sp) {
-            $splashFiles[$sp['file']] = $name === 'sanitary' ? 'Санитарный день' : 'Техзакрытие';
-        }
         $items = $engine->preview(new DateTimeImmutable($when), '__seq__', $n - 1);
         $out = [];
         foreach ($items as $p) {
@@ -53,11 +50,7 @@ switch ($action) {
             $kind = empty($p['Playlist']) ? 'empty'
                   : (!empty($p['maintenance']) ? 'tech'
                   : ($p['SanitaryDay'] ? 'sanitary' : ($videosByFile[$file]['type'] ?? 'main')));
-            $title = null;
-            if ($file !== null) {
-                $title = isset($videosByFile[$file]) ? $videosByFile[$file]['title']
-                       : ($splashFiles[$file] ?? $file);
-            }
+            $title = $file !== null ? ($videosByFile[$file]['title'] ?? $file) : null;
             $out[] = [
                 'time'      => null, // время считается на клиенте по watchdog
                 'file'      => $file,

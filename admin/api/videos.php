@@ -37,6 +37,22 @@ function find_video_index(array $videos, string $id): int
 }
 
 switch ($action) {
+    case 'status':
+        // Очередь конвертации + статусы «не готовых» роликов — для живого обновления таблицы.
+        require_auth();
+        $pending = [];
+        foreach (store_read('videos.json') as $v) {
+            if (($v['status'] ?? 'ready') !== 'ready') {
+                $pending[] = ['id' => $v['id'], 'file' => $v['file'], 'status' => $v['status']];
+            }
+        }
+        json_out([
+            'queue'   => store_read('queue.json'),
+            'pending' => $pending,
+            'server_time' => date('c'),
+        ]);
+        break;
+
     case 'list':
         require_auth();
         json_out(store_read('videos.json'));
@@ -103,7 +119,23 @@ switch ($action) {
         $orig  = basename($_FILES['file']['name']);
         $ext   = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
         $title = trim((string)($_POST['title'] ?? pathinfo($orig, PATHINFO_FILENAME)));
-        $type  = in_array($_POST['type'] ?? '', ['main','additional'], true) ? $_POST['type'] : 'main';
+        $type  = in_array($_POST['type'] ?? '', ['main', 'additional', 'splash'], true) ? $_POST['type'] : 'main';
+        // для заставок уточняем назначение: недельный санитарный день или техзакрытие
+        $splashRole = null;
+        if ($type === 'splash') {
+            $splashRole = $_POST['splash_role'] ?? '';
+            if (!in_array($splashRole, ['splash_weekday', 'splash_tech'], true)) {
+                json_error('Для заставки укажите назначение: «санитарный день недели» или «техническое закрытие»');
+            }
+            if ($splashRole === 'splash_weekday') {
+                // ролик санитарного дня недели может быть только один
+                foreach (store_read('videos.json') as $v0) {
+                    if (($v0['splash_role'] ?? '') === 'splash_weekday') {
+                        json_error('Ролик-заставка санитарных дней уже существует («' . $v0['title'] . '»). Замените файл в его карточке либо сначала удалите его.', 409);
+                    }
+                }
+            }
+        }
 
         $isVideo = in_array($ext, cfg()['allowed_video_extensions'], true);
         $isImage = in_array($ext, cfg()['allowed_image_extensions'], true);
@@ -150,8 +182,9 @@ switch ($action) {
             'title'      => $title,
             'slug'       => $slug,
             'file'       => $finalName,          // media/<file> — всегда mp4
-            'type'       => $type,               // основной / дополнительный
+            'type'       => $type,               // основной / дополнительный / заставка
             'kind'       => $isImage ? 'image' : 'video',
+            'splash_role' => $splashRole,        // splash_weekday | splash_tech (для type=splash)
             'status'     => 'queued',            // queued -> converting -> ready | error
             'duration'   => null,
             'filesize'   => null,
@@ -199,12 +232,22 @@ switch ($action) {
         }
         if (isset($d['type'])) {
             $type = (string)$d['type'];
-            if (!in_array($type, ['main', 'additional'], true)) {
+            if (!in_array($type, ['main', 'additional', 'splash'], true)) {
                 json_error('Недопустимый тип ролика');
             }
-            if ($type !== $videos[$i]['type']) {
+            $role = isset($d['splash_role']) ? (string)$d['splash_role'] : null;
+            if ($type === 'splash') {
+                if (!in_array((string)($videos[$i]['splash_role'] ?? $role), ['splash_weekday', 'splash_tech'], true)) {
+                    json_error('Для заставки укажите назначение: splash_weekday или splash_tech');
+                }
+            }
+            if ($type !== $videos[$i]['type'] || ($role !== null && $role !== ($videos[$i]['splash_role'] ?? null))) {
                 $changed['type'] = $type;
                 $videos[$i]['type'] = $type;
+                if ($role !== null) {
+                    $changed['splash_role'] = $role;
+                    $videos[$i]['splash_role'] = $role;
+                }
             }
         }
         store_write('videos.json', $videos);
@@ -312,6 +355,69 @@ switch ($action) {
         json_out(['ok' => true, 'video' => $videos[$i]]);
         break;
 
+    // ---------- замена файла готового ролика (пере-конвертация) ----------
+    case 'replace':
+        // multipart: id, file (видео или изображение), duration (для изображений)
+        require_auth();
+        require_post();
+        require_csrf();
+
+        $errCode = $_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE;
+        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            admin_log('upload_failed', ['context' => 'video_replace', 'error_code' => (int)$errCode,
+                'files_keys' => array_keys($_FILES), 'post_keys' => array_keys($_POST)]);
+            json_error('Файл не загружен: ' . upload_err_message((int)$errCode), 400);
+        }
+        $id = (string)($_POST['id'] ?? '');
+        $videos = store_read('videos.json');
+        $i = find_video_index($videos, $id);
+        $v = $videos[$i];
+
+        $orig = basename($_FILES['file']['name']);
+        $ext  = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+        $isVideo = in_array($ext, cfg()['allowed_video_extensions'], true);
+        $isImage = in_array($ext, cfg()['allowed_image_extensions'], true);
+        if (!$isVideo && !$isImage) {
+            admin_log('upload_rejected', ['name' => $orig, 'ext' => $ext, 'context' => 'video_replace']);
+            json_error("Недопустимый тип файла: .$ext (можно видео или изображение; всё конвертируется в mp4)", 400);
+        }
+        if ($_FILES['file']['size'] > cfg()['max_upload_size']) {
+            admin_log('upload_failed', ['name' => $orig, 'reason' => 'too large', 'size' => $_FILES['file']['size']]);
+            json_error('Файл слишком большой', 400);
+        }
+        $duration = null;
+        if ($isImage) {
+            $duration = isset($_POST['duration']) && $_POST['duration'] !== '' ? max(1, (int)$_POST['duration']) : null;
+        }
+
+        $storedSource = "src_{$id}_{$orig}";
+        @mkdir(root_path('uploads'), 0775, true);
+        if (!move_uploaded_file($_FILES['file']['tmp_name'], root_path('uploads/' . $storedSource))) {
+            admin_log('upload_failed', ['name' => $orig, 'reason' => 'move_uploaded_file failed', 'context' => 'video_replace']);
+            json_error('Не удалось сохранить загруженный файл в uploads/ (проверьте права на каталог)', 500);
+        }
+
+        $videos[$i]['status'] = 'queued';
+        $videos[$i]['error']  = null;
+        $videos[$i]['kind']   = $isImage ? 'image' : 'video';
+        $videos[$i]['req_duration'] = $duration;
+        store_write('videos.json', $videos);
+
+        $queue = store_read('queue.json');
+        $queue[] = [
+            'video_id' => $id,
+            'source'   => $storedSource,
+            'filename' => $v['file'],   // то же итоговое имя — ссылка в расписании не меняется
+            'kind'     => $isImage ? 'image' : 'video',
+            'duration' => $duration,
+            'added'    => date('c'),
+        ];
+        store_write('queue.json', $queue);
+        admin_log('video_replace', ['id' => $id, 'title' => $v['title'], 'file' => $v['file'], 'orig' => $orig,
+            'kind' => $videos[$i]['kind'], 'size' => $_FILES['file']['size']]);
+        json_out(['ok' => true, 'video' => $videos[$i]], 201);
+        break;
+
     case 'delete':
         require_auth();
         require_post();
@@ -321,6 +427,10 @@ switch ($action) {
         $videos = store_read('videos.json');
         $i = find_video_index($videos, $id);
         $v = $videos[$i];
+        // защита: уникальные заставки нельзя удалять — они нужны движку
+        if (($v['splash_role'] ?? '') === 'splash_weekday') {
+            json_error('Нельзя удалить заставку санитарных дней недели. Замените её файл кнопкой «⬆ Файл».', 409);
+        }
         // проверка: ролик активен в текущем расписании?
         $now = new DateTimeImmutable('now', new DateTimeZone(cfg()['timezone']));
         foreach ((array)($v['schedule'] ?? []) as $per) {

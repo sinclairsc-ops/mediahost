@@ -213,7 +213,7 @@
         "title": "tech042024",
         "slug": "tech042024",
         "file": "tech042024.mp4",
-        "type": "additional",
+        "type": "splash",
         "kind": "video",
         "status": "ready",
         "duration": null,
@@ -221,11 +221,12 @@
         "migrated": true,
         "schedule": [
             {
-                "id": "3dd1891f2306fcf9",
-                "start": "2024-03-20 00:00",
-                "end": "2024-03-31 22:00"
+                "id": "bf0ff09581c7b629",
+                "start": "2024-04-01 00:00",
+                "end": "2024-04-28 23:59"
             }
-        ]
+        ],
+        "splash_role": "splash_tech"
     },
     {
         "id": "migrated-imidge032025_tv",
@@ -270,7 +271,7 @@
         "title": "tech042025",
         "slug": "tech042025",
         "file": "tech042025.mp4",
-        "type": "additional",
+        "type": "splash",
         "kind": "video",
         "status": "ready",
         "duration": null,
@@ -278,11 +279,12 @@
         "migrated": true,
         "schedule": [
             {
-                "id": "68494680bb7aa7a0",
-                "start": "2025-04-04 22:00",
-                "end": "2025-04-06 22:00"
+                "id": "0ee64cc4d877f0a7",
+                "start": "2025-04-07 00:00",
+                "end": "2025-05-05 23:59"
             }
-        ]
+        ],
+        "splash_role": "splash_tech"
     },
     {
         "id": "migrated-anketa_062026_tv",
@@ -340,5 +342,109 @@
                 "end": "2026-12-25 22:00"
             }
         ]
+    },
+    {
+        "id": "e71f975c421934bc",
+        "title": "Санитарный день",
+        "slug": "sanitarnyy-den",
+        "file": "s_day.mp4",
+        "type": "splash",
+        "kind": "video",
+        "splash_role": "splash_weekday",
+        "status": "ready",
+        "duration": null,
+        "filesize": null,
+        "schedule": [
+            {
+                "id": "1fd6ed11fe464f0c",
+                "start": "2026-11-22 18:45",
+                "end": "2027-01-01 00:00"
+            },
+            {
+                "id": "3a3cf9f476b3ba9a",
+                "start": "2027-01-11 18:45",
+                "end": "2027-03-22 00:00"
+            },
+            {
+                "id": "aadda25070ad5e8c",
+                "start": "2027-05-01 18:45",
+                "end": "2027-06-01 00:00"
+            },
+            {
+                "id": "d0b61636e3a46388",
+                "start": "2027-09-01 18:46",
+                "end": "2027-10-25 00:00"
+            },
+            {
+                "id": "3792cc65397eb44d",
+                "start": "2027-11-08 18:46",
+                "end": "2028-01-01 00:00"
+            }
+        ],
+        "created": "2026-11-22T22:08:45+03:00",
+        "error": null
+    },
+    {
+        "id": "f643404834430a04",
+        "title": "tech03042023",
+        "slug": "tech03042023",
+        "file": "tech03042023.mp4",
+        "type": "splash",
+        "kind": "video",
+        "splash_role": "splash_tech",
+        "status": "ready",
+        "duration": null,
+        "filesize": null,
+        "schedule": [
+            {
+                "id": "3fafde7b42b6474f",
+                "start": "2023-04-03 00:00",
+                "end": "2023-04-30 23:59"
+            }
+        ],
+        "created": "2026-11-22T22:08:45+03:00",
+        "error": null
+    },
+    {
+        "id": "bad1e2dd72314fc0",
+        "title": "s_day_10may",
+        "slug": "s-day-10may",
+        "file": "s_day_10may.mp4",
+        "type": "splash",
+        "kind": "video",
+        "splash_role": "splash_tech",
+        "status": "ready",
+        "duration": null,
+        "filesize": null,
+        "schedule": [
+            {
+                "id": "e0c9389eaef8acb6",
+                "start": "2023-05-10 00:00",
+                "end": "2023-05-10 23:59"
+            }
+        ],
+        "created": "2026-11-22T22:08:45+03:00",
+        "error": null
+    },
+    {
+        "id": "73c3e49621a18912",
+        "title": "maintenance2026",
+        "slug": "maintenance2026",
+        "file": "maintenance2026.mp4",
+        "type": "splash",
+        "kind": "video",
+        "splash_role": "splash_tech",
+        "status": "error",
+        "duration": null,
+        "filesize": null,
+        "schedule": [
+            {
+                "id": "6dfc5d54886e0f3c",
+                "start": "2026-04-06 00:00",
+                "end": "2026-04-30 23:59"
+            }
+        ],
+        "created": "2026-11-22T22:08:45+03:00",
+        "error": null
     }
 ]
