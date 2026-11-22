@@ -1,0 +1,544 @@
+<html>
+<!-- Скрипт проигрывания видеороликов на телевизорах -->
+<head>
+<meta charset="utf-8">
+<title>Аквапарк - 1/5</title>
+<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<img src="s_day.jpg" id="shedule" hidden="true" style="width: 100%; height:100%;">
+
+<figure id="video_player">
+	<video autoplay="autoplay" id="videoplace">
+		<source type="video/mp4">
+  Video is not supported
+	</video>
+</figure>
+
+<div class="overlay" onclick="InfoClick();" id="informer">
+	<p id="visitors">
+	</p>
+</div>
+
+<div class="heartbeat" id="heartbeat" style="visibility: hidden;">
+	
+</div>
+
+<script>
+	var version = "21";
+	var video_count = 6;
+
+	var sanitary_day = true;
+	var playlist = [							//дефолтный плейлист
+							'1.mp4',
+							'2.mp4',
+							'3.mp4',
+							'4.mp4',
+							'5.mp4',
+							'6.mp4',
+							];
+//	var videoEl = document.getElementsByTagName('video')[0];
+	var visitors = 10;
+	var cnt = 0;
+	var loaded = 1;
+	var log_sended = true;
+	var log_data = "";
+	var log_post = new FormData();
+	var tmp_cnt = 0;
+	var page_state = 0;
+	var muted = 1;
+	var GeneralWatchDog_cnt = 3;
+	var videolen = 0;
+	var url = document.location.href;
+	var need_reload = false;
+	var GeneralWatchDogDivisor = 59;
+	var log_data_last_len = 0;
+	var video_folder = '/video/';
+
+	var video_flag = true;
+
+//Подсистема сохранения логов
+	logfile = "log2.php";
+	var xhr_log=new XMLHttpRequest();
+	xhr_log.open("POST",logfile,true);
+	xhr_log.timeout = 4000;
+	xhr_log.onload=function()
+	{
+		log_sended = true;
+	}
+	xhr_log.onloadend =function()
+	{
+		if (xhr_log.status != 200)
+		{
+			LogWrite("Log save error");
+			xhr_log.open("POST",logfile+"?"+Math.random()+"&length="+log_data_last_len);
+			xhr_log.send(log_post);
+		}
+		
+		if(need_reload)
+		{
+			if(tmp_cnt)
+			{
+				LogWrite("Saving last events");
+				setTimeout(function() {/*location.reload();*/ DoReload();}, 4000);
+			}
+			else
+				setTimeout(function() {/*location.reload();*/ DoReload();}, 2000);
+		}
+	}
+	function sleep(milliseconds) {
+	  const date = Date.now();
+	  currentDate = null;
+	  do {
+		currentDate = Date.now();
+	  } while (currentDate - date < milliseconds);
+	}
+	function DoReload()
+	{
+		xhr_reload = new XMLHttpRequest();
+
+		//xhr_reload.timeout = 1000;
+		console.log('Check for url "' + window.location.pathname + '" is accessible');
+		retry_count = 0;
+		do
+		{
+			try
+			{
+				xhr_reload.open('GET', window.location.pathname, false);
+				retry_count++;
+				console.log('Attemp ' + retry_count + ' access to "' + window.location.pathname + '"');
+				xhr_reload.send();
+				console.log('Response ' + xhr_reload.status + ' received');
+				if (xhr_reload.status == 200)
+				{
+					console.log('Go to reload');
+					break;
+				}
+			}
+			catch(err)
+			{ // для отлова ошибок используем конструкцию try...catch вместо onerror
+				//alert("Запрос не удался");
+					console.log('Error ' + xhr_reload.status);
+			}
+			console.log('Wait for 30s');
+		    sleep (30000);
+		}
+		while(1);
+		console.log('Do reload');
+		location.reload();
+	}
+	function LogWrite(logtext)
+	{
+		var date = new Date();
+		var my_date_hour = date.getHours();
+		var my_date_min = date.getMinutes();
+		var my_date_sec = date.getSeconds();
+		if (my_date_hour < 10) my_date_hour = "0"+my_date_hour;
+		if (my_date_min < 10) my_date_min = "0"+my_date_min;
+		if (my_date_sec < 10) my_date_sec = "0"+my_date_sec;
+		dt = my_date_hour + ":" + my_date_min + ":" + my_date_sec;
+		console.log(dt + " " + logtext);
+
+		if(tmp_cnt)
+			log_data += "||||" + logtext;
+		else
+			log_data = logtext;	
+
+		tmp_cnt++;
+
+		if(!log_sended)
+			return;
+
+		log_sended = false;
+		log_post = new FormData();
+
+		console.log(dt + " " + tmp_cnt + " " + log_data);
+		log_post.append("logtext", log_data);
+		log_post.append("length", log_data.length);
+		log_data_last_len = log_data.length;
+
+		log_data = "";
+		
+		log_post.append("counter", tmp_cnt);
+
+		tmp_cnt = 0;
+
+		xhr_log.open("POST",logfile+"?"+Math.random()+"&length="+log_data_last_len);
+		xhr_log.send(log_post);
+
+//		alert("do send");
+	}
+
+
+//Стартовые сообщения в лог
+	LogWrite("\r\n\r\npage loading, version: " + version + ", url: " + url);
+	LogWrite("Memory using: jsHeapSizeLimit:" + window.performance.memory.jsHeapSizeLimit + " totalJSHeapSize:" + window.performance.memory.totalJSHeapSize + " usedJSHeapSize:" + window.performance.memory.usedJSHeapSize);
+	LogWrite(navigator.userAgent);
+
+
+//Загрузим плейлист
+	shedule = "playlist.php";
+	var xhr_shedule=new XMLHttpRequest();
+	xhr_shedule.open("GET",shedule,false);
+//	xhr_shedule.timeout = 4000;
+	xhr_shedule.onload=function()
+	{
+		timeplan = JSON.parse(xhr_shedule.responseText);
+	}
+	xhr_shedule.onloadend =function()
+	{
+		if (xhr_shedule.status != 200) 
+		{
+			LogWrite("Timeplan loading error");
+			}
+	}
+	xhr_shedule.send("");
+
+//Создайм плеер и виджет
+	video = document.querySelector("#video_player video");
+	video.removeAttribute("controls");
+	video.removeAttribute("poster");
+	vis = document.getElementById("visitors");
+	vis.innerHTML = "<div id=\"myProgress\">\n  <div id=\"myBar\"></div>\n</div>";
+
+
+	maintenance = timeplan["maintenance"];
+	/*
+	if(maintenance)
+	{
+		shed = document.getElementById("shedule");
+		vid = document.getElementById("video_player");
+		inf = document.getElementById("informer");
+		vis = document.getElementById("visitors");
+		shed.src = timeplan["maintenancepicture"];
+		shed.hidden = false;
+		vid.hidden = true;
+		inf.hidden = true;
+		vis.hidden = true;
+		LogWrite("Maintenance");
+		document.title = "Аквапарк закрыт на технические работы";
+		GeneralWatchDog_cnt = timeplan["GeneralWatchdog"];
+		LogWrite("GeneralWatchdog setting loaded: " + GeneralWatchDog_cnt);
+		GeneralWatchDogId = setInterval(GeneralWatchDog, 1000);
+	}
+	else
+	{
+	*/
+	
+	playlist = timeplan["Playlist"];
+	sanitary_day = timeplan["SanitaryDay"];
+	GeneralWatchDog_cnt = timeplan["GeneralWatchdog"];
+	LogWrite("GeneralWatchdog setting loaded: " + GeneralWatchDog_cnt);
+
+	GeneralWatchDogId = setInterval(GeneralWatchDog, 1000);
+
+
+//Если санитарный день, показываем заставку
+	if(sanitary_day)
+	{
+		shed = document.getElementById("shedule");
+		vid = document.getElementById("video_player");
+		inf = document.getElementById("informer");
+		vis = document.getElementById("visitors");
+		shed.hidden = false;
+		vid.hidden = true;
+		inf.hidden = true;
+		vis.hidden = true;
+		LogWrite("Sanitary day");
+		document.title = "Аквапарк - Санитарный день";
+	}
+	else
+	{
+		vis = document.getElementById("visitors");
+		vis.hidden = maintenance?true:false;
+		source = document.querySelectorAll("#video_player video source");
+		source[0].src = video_folder + playlist[cnt];
+		video.load();
+		document.title = "Аквапарк - "+playlist[cnt];
+
+
+//		video.play();
+		video_count = playlist.length;
+		LogWrite((cnt+1) + " of " + video_count + " " + playlist[cnt]);
+
+//		GeneralWatchDogId = setInterval(GeneralWatchDog, 1000);
+//		WathDogId = setTimeout(WatchDog, 30000);
+		PlayTimer = setTimeout(nextVideo, 10000);
+
+		video.addEventListener('ended',  function() {VideoEvent("ended");nextVideo();}, false);
+	//	videoEl.addEventListener('playing', function() {alert("playing");}, false);
+	//	videoEl.addEventListener('play', FullScreen, false);
+	//	videoEl.addEventListener('canplay', function() {videoEl.play();}, false);
+
+		video.addEventListener('abort', function() {VideoEvent("abort");}, false);
+		video.addEventListener('canplay', Canplay, false);
+		video.addEventListener('canplaythrough', function() {VideoEvent("canplaythrough");}, false);
+		video.addEventListener('durationchange', function() {setTimeout(LogDuration, 1000);}, false);
+		video.addEventListener('emptied', function() {VideoEvent("emptied");}, false);
+		video.addEventListener('error', function() {VideoEvent("error");}, false);
+		video.addEventListener('interruptbegin', function() {VideoEvent("interruptbegin");}, false);
+		video.addEventListener('interruptend', function() {VideoEvent("interruptend");}, false);
+		video.addEventListener('loadeddata', function() {VideoEvent("loadeddata");}, false);
+		video.addEventListener('loadedmetadata', function() {VideoEvent("loadedmetadata");}, false);
+		video.addEventListener('loadstart', function() {VideoEvent("loadstart");}, false);
+		video.addEventListener('pause', function() {VideoEvent("pause");}, false);
+		video.addEventListener('play', function() {VideoEvent("play");}, false);
+		video.addEventListener('playing', function() {VideoEvent("playing");}, false);
+		video.addEventListener('progress', function() {VideoEvent("progress");}, false);
+		video.addEventListener('ratechange', function() {VideoEvent("ratechange");}, false);
+		video.addEventListener('seeked', function() {VideoEvent("seeked");}, false);
+		video.addEventListener('seeking', function() {VideoEvent("seeking");}, false);
+		video.addEventListener('stalled', function() {StalledVideo();}, false);
+		video.addEventListener('suspend', function() {VideoEvent("suspend");}, false);
+		video.addEventListener('timeupdate', ClearWatchDog, false);
+		video.addEventListener('volumechange', function() {VideoEvent("volumechange");}, false);
+		video.addEventListener('waiting', WaitingVideo, false);
+
+		file = "image.php";
+		var xhr=new XMLHttpRequest();
+		xhr.open("GET",file);
+		xhr.timeout = 4000;
+		xhr.onload=function()
+		{
+			vis = document.getElementById("visitors");
+			vis.innerHTML = xhr.responseText + "<div id=\"myProgress\">\n  <div id=\"myBar\"></div>\n</div>";
+			LogWrite("Loaded data: ["+xhr.responseText+"]");
+			loaded = 0;
+		}
+		xhr.onloadend =function()
+		{
+			if (xhr.status != 200) 
+				LogWrite("Data is not loaded");
+		}
+		xhr.send();
+
+		function InfoClick()
+		{
+			switch(page_state)
+			{
+			case 0:
+				document.documentElement.webkitRequestFullScreen();
+				page_state++;
+				break;
+			case 1:
+				video.muted = false;
+				muted = false;
+				page_state++;
+				break;
+			default:
+				document.webkitCancelFullScreen();
+				video.muted = true;
+				muted = true;
+				page_state=0;
+				break;
+			}
+		}
+
+		function nextVideo()  // Меняем видеоролик на следующий в плейлисте
+		{
+			clearTimeout(PlayTimer);
+//			video_count = playlist.length;
+			LogWrite("nextVideo called, cnt="+cnt+", video_count="+video_count);
+			if (++cnt<video_count)
+			{
+//					cnt++;
+				document.title = "Аквапарк - "+playlist[cnt];
+//				document.title = "Аквапарк - "+(cnt+1)+"/"+video_count;
+				source = document.querySelectorAll("#video_player video source");
+				source[0].src = "";
+				video.load();
+				source[0].src = video_folder + playlist[cnt];
+				video.load();
+//				video.play();
+				LogWrite((cnt+1) + " of " + video_count + " " + playlist[cnt]);
+			}
+			else
+			{  // Если отыграли все ролики - перезагрузим страницу (позволяет бороться с утечками памяти на телевизорах)
+				need_reload = true;
+				LogWrite("Playlist ended, reload page");
+	//			cnt = 1;
+			}
+//			pls = playlist[cnt];
+			
+
+//			videoEl.src = playlist[cnt];
+//			videoEl.play();
+		}
+
+		function Canplay()  // Если возникло событие canplay, сбрасываем сторожевые таймеры
+		{
+			VideoEvent("canplay");
+			clearTimeout(PlayTimer);
+			PlayTimer = setTimeout(nextVideo, 10000);
+			video.play();
+		}
+
+		function VideoEvent(event) // сохраняем в лог событие видеообъекта
+		{
+			video_flag = true;
+//			LogWrite("Memory using:" + window.performance.memory.usedJSHeapSize);
+			LogWrite("Video: " + playlist[cnt] + " event: " + event);
+		}
+
+		function StalledVideo() // Если проигрывание остановлено, ставим таймер на 2 секунды, если за это время не оживёт - включим следующее видео
+		{
+			VideoEvent("stalled");
+			clearTimeout(PlayTimer);
+			PlayTimer = setTimeout(nextVideo, 2000);
+		}
+
+		function WaitingVideo()  // Ожидание загрузки видео, не более 10 секунд, иначе выбираем следующее
+		{
+			VideoEvent("waiting");
+			clearTimeout(PlayTimer);
+			PlayTimer = setTimeout(nextVideo, 10000);
+			
+		}
+
+
+		function LogDuration()  // Если у видеообъекта изменилась длина видеоролика. запишем это в лог, посчитаем, когда должно закончиться проигрывание
+		{
+			VideoEvent("durationchange");
+			videolen = Math.round(video.duration);
+//			clearInterval(WathDogId);
+	//		console.log("New video length: " + videolen);
+//			WathDogId = setTimeout(WatchDog, 15000+videolen*1000);
+
+
+			sec = videolen%60;
+			min = (videolen-sec)/60;
+			if (min < 10) min = "0"+min;
+			if (sec < 10) sec = "0"+sec;
+			LogWrite("New video duration: "+min+":"+sec);
+
+			if(isNaN(videolen))  // Если длина видео - бесконечность, значит неправильно загрузилось, меняем видео на предыдущее и пытаемся ещё раз
+			{
+				cnt--;
+				LogWrite("Incorrect video duration, restart video #"+cnt);
+				NextVideo();
+			}
+
+			var d = new Date();
+			var d_now = d;
+			var now_hour = d_now.getHours();
+			var now_min = d_now.getMinutes();
+			var now_sec = d_now.getSeconds();
+			if (now_hour < 10) now_hour = "0"+now_hour;
+			if (now_min < 10) now_min = "0"+now_min;
+			if (now_sec < 10) now_sec = "0"+now_sec;
+
+			d.setSeconds(d.getSeconds() + videolen);
+
+			var d_hour = d.getHours();
+			var d_min = d.getMinutes();
+			var d_sec = d.getSeconds();
+			if (d_hour < 10) d_hour = "0"+d_hour;
+			if (d_min < 10) d_min = "0"+d_min;
+			if (d_sec < 10) d_sec = "0"+d_sec;
+
+			LogWrite("Now "+now_hour + ":" + now_min + ":" + now_sec + ", video will be ended around "+d_hour + ":" + d_min + ":" + d_sec);
+	//		if(muted)
+	//			videoEl.muted = true;
+	//		else
+				video.muted = false;
+
+		}
+		
+		function FullScreen()
+		{
+	//		alert("play");
+			document.documentElement.requestFullScreen();
+			video.requestFullScreen();
+		}
+
+		function TimerTick() // обновление информации о посетителях
+		{
+			if(!loaded)
+			{
+				loaded = 1;
+				xhr.open("GET",file+"?rnd="+Math.random());
+				xhr.send();
+				LogWrite("Load visitors data");
+	//			videoEl.play();
+			}
+
+		}
+/*
+
+		function AddLog(logtext)
+		{
+			if(log_data != "")
+				log_data += "||||" + logtext;
+			else
+				log_data = logtext;	
+		}
+*/
+
+
+		function ClearWatchDog() // очистка сторожевого таймера, если изменилось время проигрывания видео
+		{
+			video_flag = true;
+
+
+			wdt = Math.round(video.currentTime / videolen * 100);
+			var elem = document.getElementById("myBar");
+			elem.style.width = wdt + "%";
+//			console.log(elem.style.width);
+//			LogWrite("myBar " + wdt + "%");
+	//		dbgpl = document.getElementById("debugplace");
+	//		dbgpl.innerHTML = Math.round(videoEl.currentTime) + "/" + videolen;
+			clearTimeout(PlayTimer);
+			PlayTimer = setTimeout(nextVideo, 10000);
+	//		clearInterval(WathDogId);
+	//		WathDogId = setTimeout(WatchDog, 30000);
+		}
+
+
+		function WatchDog()  // устарело, не используется
+		{
+			need_reload = true;
+			LogWrite("WatchDog detected");
+//			setTimeout(function() {location.reload();}, 1000);
+	//		location.reload();
+	//		clearInterval(WathDogId);
+			
+		}
+
+		timerId = setInterval(TimerTick, 5000);
+	}
+//}
+
+
+
+	function GeneralWatchDog()  // Общий таймер на проигрывание плейлиста - 15 минут
+	{
+		if(GeneralWatchDogDivisor)
+		{
+			hb = document.getElementById("heartbeat");  // отображаем точку "сердцебиения", показывающую, что скрипт не завис
+			if(hb.style.visibility == "hidden")
+				hb.style.visibility = "visible";
+			else
+			hb.style.visibility = "hidden";
+			GeneralWatchDogDivisor--;
+		}
+		else
+		{
+			if(!video_flag && !sanitary_day) nextVideo();  // Раз в минуту проверяем, если видео не проигрывалось за это время - пробуем следующее
+			video_flag = false;
+
+			GeneralWatchDogDivisor = 59;
+			LogWrite("GeneralWatchDog count " + GeneralWatchDog_cnt);
+			GeneralWatchDog_cnt--;
+			if(!GeneralWatchDog_cnt)  // если время плейлиста истекло - перезагружаем страницу
+			{
+				need_reload = true;
+				LogWrite("GeneralWatchDog detected");
+				DoReload();
+//				location.reload();
+			}
+		}
+	}
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+cache/
+data/state/
+data/*.bak
+*.log
+
+# Локальная конфигурация (не коммитить)
+src/config.php

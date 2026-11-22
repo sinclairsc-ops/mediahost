@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Администрирование видеороликов</title>
+<style>
+  /* Без внешних зависимостей: минимальное оформление (работает офлайн) */
+  body { font-family: system-ui, sans-serif; margin: 0; background: #f2f4f7; color: #212529; }
+  nav.topbar { background: #1e2a3a; color: #fff; padding: .6rem 1rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+  nav.topbar a { color: #cdd7e4; text-decoration: none; cursor: pointer; }
+  nav.topbar a.active, nav.topbar a:hover { color: #fff; font-weight: 600; }
+  main { max-width: 1200px; margin: 1rem auto; padding: 0 1rem; }
+  .card { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid #e3e7ee; vertical-align: top; }
+  .badge { padding: .15rem .5rem; border-radius: 10px; font-size: .78rem; color: #fff; white-space: nowrap; }
+  .b-main{background:#2b7de0}.b-add{background:#28a745}.b-ready{background:#28a745}.b-queued{background:#e0a800}.b-converting{background:#7048e8}.b-error{background:#dc3545}
+  .b-active{background:#1c7c33}.b-inactive{background:#adb5bd}
+  input, select, button, textarea { font: inherit; padding: .35rem .5rem; border: 1px solid #ccd3dd; border-radius: 6px; }
+  button { cursor: pointer; background: #2b7de0; color: #fff; border: none; }
+  button.secondary { background: #6c757d; } button.danger { background: #dc3545; } button.small { padding: .15rem .45rem; font-size: .82rem; }
+  .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-bottom: .5rem; }
+  .muted { color: #6c757d; font-size: .85rem; }
+  pre.logline { white-space: pre-wrap; font-size: .8rem; margin: 0; }
+  dialog { border: none; border-radius: 8px; padding: 1.2rem; box-shadow: 0 4px 24px rgba(0,0,0,.3); min-width: 420px; max-width: 90vw; }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  #toast { position: fixed; bottom: 1rem; right: 1rem; background: #1e2a3a; color: #fff; padding: .6rem 1rem; border-radius: 6px; display: none; max-width: 50vw; }
+  /* плейлист — списком друг под другом */
+  ol.playlist { list-style: none; counter-reset: pl; margin: 0; padding: 0; }
+  ol.playlist > li { counter-increment: pl; display: flex; gap: .6rem; align-items: baseline; padding: .45rem .6rem; margin-bottom: .35rem; border-radius: 6px; background: #eef2f7; border-left: 4px solid #2b7de0; }
+  ol.playlist > li::before { content: counter(pl); font-weight: 700; color: #6c757d; min-width: 1.6em; }
+  ol.playlist > li.pl-sanitary { border-left-color: #e0a800; background: #fff6dd; }
+  ol.playlist > li.pl-tech { border-left-color: #dc3545; background: #ffe3e3; }
+  ol.playlist > li.pl-add { border-left-color: #28a745; background: #e6f7e6; }
+  ol.playlist > li .pl-time { font-variant-numeric: tabular-nums; color: #495057; min-width: 4.2em; font-weight: 600; }
+  ol.playlist > li .pl-meta { color: #6c757d; font-size: .82rem; }
+  .per-list { margin: 0; padding-left: 1.2rem; }
+  .per-list li { margin-bottom: .3rem; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .6rem; margin-bottom: .6rem; }
+  .grid2 label { font-size: .85rem; color: #495057; }
+  .grid2 input, .grid2 select { width: 100%; box-sizing: border-box; }
+</style>
+</head>
+<body>
+
+<div id="loginView" hidden>
+  <main style="max-width:380px;margin-top:10vh">
+    <div class="card">
+      <h3>Вход в административный раздел</h3>
+      <div class="row"><input id="l_login" placeholder="Логин" autocomplete="username"></div>
+      <div class="row"><input id="l_pass" type="password" placeholder="Пароль" autocomplete="current-password"></div>
+      <button onclick="doLogin()">Войти</button>
+      <div id="l_err" class="muted"></div>
+    </div>
+  </main>
+</div>
+
+<div id="appView" hidden>
+  <nav class="topbar">
+    <strong>ТВ-Админ</strong>
+    <a data-tab="playlist" onclick="showTab('playlist')">Плейлист сейчас</a>
+    <a data-tab="videos" onclick="showTab('videos')">Ролики и расписание</a>
+    <a data-tab="specials" onclick="showTab('specials')">Особые дни</a>
+    <a data-tab="settings" id="tablink-settings" onclick="showTab('settings')" hidden>Настройки</a>
+    <a data-tab="users" id="tablink-users" onclick="showTab('users')" hidden>Пользователи</a>
+    <a data-tab="logs" onclick="showTab('logs')">Журнал</a>
+    <span style="margin-left:auto"></span>
+    <span id="whoami" class="muted"></span>
+    <a onclick="openPassDlg()" title="Сменить свой пароль">Пароль</a>
+    <a onclick="doLogout()">Выход</a>
+  </nav>
+
+  <main>
+    <!-- ================= ПЛЕЙЛИСТ ================= -->
+    <section id="tab-playlist" hidden>
+      <div class="card">
+        <h4>Актуальный плейлист</h4>
+        <div id="pl_now"></div>
+        <div class="row">
+          <label>Смоделировать на дату/время: <input type="datetime-local" id="pl_at"></label>
+          <label>Показов: <input type="number" id="pl_count" value="12" min="1" max="50" style="width:5rem"></label>
+          <button onclick="loadSequence()">Обновить</button>
+        </div>
+        <ol class="playlist" id="pl_seq"></ol>
+      </div>
+    </section>
+
+    <!-- ================= РОЛИКИ + РАСПИСАНИЕ ================= -->
+    <section id="tab-videos" hidden>
+      <div class="card">
+        <h4>Загрузка нового ролика</h4>
+        <div class="row">
+          <input type="file" id="v_file" accept="video/*,.mp4,.mkv,.mov,.avi,.webm,image/*" onchange="onUploadFilePick()">
+          <input id="v_title" placeholder="Название ролика (для имени файла)">
+          <select id="v_type"><option value="main">Основной</option><option value="additional">Дополнительный</option></select>
+          <label id="v_duration_wrap" hidden>Длительность видео из картинки, с
+            <input id="v_duration" type="number" value="60" min="3" max="3600" style="width:5rem"></label>
+          <button onclick="uploadVideo()">Загрузить и конвертировать</button>
+        </div>
+        <div class="muted" id="v_upload_hint">Все файлы конвертируются в mp4. Имя файла формируется транслитерацией названия. Конвертация выполняется на сервере (ffmpeg), статус виден в таблице. Периоды показа назначаются в карточке ролика после загрузки.</div>
+      </div>
+      <div class="card">
+        <h4>Библиотека роликов и расписание показов</h4>
+        <div class="row">
+          <input id="v_filter" placeholder="Фильтр по названию/файлу" oninput="renderVideos()">
+          <label><input type="checkbox" id="v_only_active" onchange="renderVideos()"> только активные сейчас</label>
+          <label><input type="checkbox" id="v_only_inactive" onchange="renderVideos()"> только неактивные</label>
+          <span class="muted" id="v_summary"></span>
+        </div>
+        <table>
+          <thead><tr><th>Название</th><th>Файл</th><th>Тип</th><th>Статус</th><th>Длит.</th><th>Периоды показа</th><th></th></tr></thead>
+          <tbody id="v_rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= ОСОБЫЕ ДНИ ================= -->
+    <section id="tab-specials" hidden>
+      <div class="card">
+        <h4>Санитарные дни по дню недели</h4>
+        <div class="row">
+          <select id="wd_day">
+            <option value="1">Понедельник</option><option value="2">Вторник</option><option value="3">Среда</option>
+            <option value="4">Четверг</option><option value="5">Пятница</option><option value="6">Суббота</option><option value="7">Воскресенье</option>
+          </select>
+          <label><input type="checkbox" id="wd_enabled" checked> включено</label>
+          <button onclick="saveWeekday()">Сохранить</button>
+        </div>
+        <h5>Ролик санитарного дня</h5>
+        <div class="row">
+          <input id="sd_title" placeholder="Название заставки (напр. «Санитарный день»)">
+          <input type="file" id="sd_file" accept="video/*,image/*,.mp4" style="max-width:280px">
+          <button onclick="uploadSplash('splash_weekday')">Загрузить / заменить</button>
+        </div>
+        <div id="sd_info" class="muted"></div>
+        <h5>Периоды действия санитарных дней</h5>
+        <div class="row">
+          <label>с <input type="date" id="wp_start"></label>
+          <label>по <input type="date" id="wp_end"></label>
+          <button onclick="addWeekdayPeriod()">+ Добавить период</button>
+        </div>
+        <ul class="per-list" id="wp_list"></ul>
+        <div class="muted">В выбранный день недели показывается только ролик санитарного дня, если дата попадает в один из периодов действия. Произвольную дату можно сделать санитарной через период технического закрытия на один день с нужным роликом — техзакрытие имеет приоритет.</div>
+      </div>
+      <div class="card">
+        <h4>Периоды технического закрытия</h4>
+        <div class="row muted">Добавить период:
+          <label>с <input type="datetime-local" id="tp_start"></label>
+          <label>по <input type="datetime-local" id="tp_end"></label>
+          <select id="tp_new_splash"><option value="">— ролик не назначен —</option></select>
+          <button onclick="addTech()">＋ Добавить</button>
+        </div>
+        <table>
+          <thead><tr><th>Начало</th><th>Окончание</th><th>Ролик (mp4)</th><th>Статус</th><th></th></tr></thead>
+          <tbody id="tp_rows"></tbody>
+        </table>
+        <div class="muted">Все файлы заставок — mp4-видео (изображения конвертируются; при загрузке спрашивается длительность, по умолчанию 60 с). Ролик можно выбрать из существующих заставок или загрузить новый кнопкой «⬆». В окне техзакрытия играется только назначенный ролик.</div>
+      </div>
+    </section>
+
+    <!-- ================= НАСТРОЙКИ КОНВЕРТЕРА ================= -->
+    <section id="tab-settings" hidden>
+      <div class="card">
+        <h4>Настройки конвертера (ffmpeg)</h4>
+        <div class="grid2">
+          <label>Разрешение (-s)<br><input id="st_resolution" placeholder="1280x720"></label>
+          <label>Видеокодек (-c:v)<br><input id="st_vcodec" placeholder="libx264"></label>
+          <label>Формат пикселей (-pix_fmt)<br><input id="st_pix_fmt" placeholder="yuv420p"></label>
+          <label>Профиль (-profile:v)<br><input id="st_profile" placeholder="baseline"></label>
+          <label>Уровень (-level:v)<br><input id="st_level" placeholder="1.3"></label>
+          <label>Пресет скорости (-preset)<br>
+            <select id="st_preset_speed">
+              <option value="">—</option>
+              <option>ultrafast</option><option>superfast</option><option>veryfast</option><option>faster</option>
+              <option>fast</option><option>medium</option><option>slow</option><option>slower</option><option>veryslow</option>
+            </select></label>
+          <label>CRF (пусто = битрейт)<br><input id="st_crf" placeholder="например 23 или пусто"></label>
+          <label>Видеобитрейт (-b:v)<br><input id="st_bitrate" placeholder="2500k"></label>
+          <label>maxrate<br><input id="st_maxrate" placeholder="необязательно"></label>
+          <label>bufsize<br><input id="st_bufsize" placeholder="необязательно"></label>
+          <label>Аудиокодек (-c:a)<br><input id="st_acodec" placeholder="aac"></label>
+          <label>Аудиобитрейт (-b:a)<br><input id="st_abitrate" placeholder="128k"></label>
+          <label>Длительность ролика из изображения, с (по умолчанию при загрузке)<br><input id="st_duration_image" type="number" min="1" max="3600"></label>
+        </div>
+        <div class="row"><button onclick="saveSettings()">Сохранить настройки</button>
+          <span class="muted" id="st_php"></span></div>
+        <h5>Итоговая команда (предпросмотр)</h5>
+        <pre class="logline" id="st_prev_video"></pre>
+        <pre class="logline" id="st_prev_image"></pre>
+      </div>
+    </section>
+
+    <!-- ================= ПОЛЬЗОВАТЕЛИ ================= -->
+    <section id="tab-users" hidden>
+      <div class="card">
+        <h4>Учётные записи</h4>
+        <table>
+          <thead><tr><th>Логин</th><th>Роль</th><th>Создан</th><th></th></tr></thead>
+          <tbody id="u_rows"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h4>Создать пользователя</h4>
+        <div class="row">
+          <input id="nu_login" placeholder="Логин (латиница)">
+          <input id="nu_pass" type="password" placeholder="Пароль (мин. 8 символов)" autocomplete="new-password">
+          <select id="nu_role"><option value="editor">Редактор</option><option value="admin">Администратор</option></select>
+          <button onclick="addUser()">Создать</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ЖУРНАЛ ================= -->
+    <section id="tab-logs" hidden>
+      <div class="card">
+        <h4>Журнал действий <button class="secondary" onclick="loadLogs()">Обновить</button></h4>
+        <div id="log_rows"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- диалог редактирования периодов ролика -->
+<dialog id="schedDlg">
+  <h4 id="sd_title">Расписание ролика</h4>
+  <div id="sd_info" class="muted"></div>
+  <table>
+    <thead><tr><th>Начало</th><th>Окончание</th><th></th></tr></thead>
+    <tbody id="sd_rows"></tbody>
+  </table>
+  <div class="row" style="margin-top:.6rem">
+    <label>с <input type="datetime-local" id="ns_start"></label>
+    <label>по <input type="datetime-local" id="ns_end"></label>
+    <button onclick="sdAdd()">+ Добавить период</button>
+  </div>
+  <div class="row">
+    <button class="secondary" onclick="document.getElementById('schedDlg').close()">Закрыть</button>
+  </div>
+</dialog>
+
+<!-- диалог смены пароля -->
+<dialog id="passDlg">
+  <h4>Смена пароля</h4>
+  <div class="row"><input id="cp_login" placeholder="Логин (пусто — для себя)"></div>
+  <div class="row"><input id="cp_current" type="password" placeholder="Текущий пароль" autocomplete="current-password"></div>
+  <div class="row"><input id="cp_new" type="password" placeholder="Новый пароль (мин. 8 символов)" autocomplete="new-password"></div>
+  <div class="row">
+    <button onclick="changePassword()">Сменить</button>
+    <button class="secondary" onclick="document.getElementById('passDlg').close()">Отмена</button>
+  </div>
+</dialog>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+var CSRF = "", ME = "", ROLE = "editor", videosCache = [], specialsCache = null;
+
+function $(id){ return document.getElementById(id); }
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.style.display="block"; setTimeout(function(){t.style.display="none";},4000); }
+function api(url, opts){
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  if (opts.method === "POST" && !opts.isForm) opts.headers["Content-Type"] = "application/json";
+  if (opts.method === "POST") opts.headers["X-CSRF-Token"] = CSRF;
+  opts.credentials = "same-origin";
+  return fetch(url, opts).then(function(r){
+    return r.json().then(function(j){ if (!r.ok) throw new Error(j.error || ("HTTP "+r.status)); return j; });
+  });
+}
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];}); }
+function fmtDur(sec){ if(!sec) return "—"; var m=Math.floor(sec/60), s=Math.round(sec%60); return m+":"+("0"+s).slice(-2); }
+function nowLocal(){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+function isActiveNow(v){
+  var now = new Date().toISOString().slice(0,16).replace("T"," ");
+  return (v.schedule||[]).some(function(p){ return p.start <= now && now < p.end; });
+}
+
+// ---------- авторизация ----------
+function boot(){
+  api("api/auth.php?action=check").then(function(st){
+    CSRF = st.csrf;
+    if (!st.auth) { $("loginView").hidden=false; $("appView").hidden=true; }
+    else { enterApp(st.user, st.role); }
+  });
+}
+function enterApp(user, role){
+  ME=user; ROLE=role||"editor";
+  $("loginView").hidden=true; $("appView").hidden=false;
+  $("whoami").textContent = user + (ROLE==="admin"?" (админ)":" (редактор)");
+  $("tablink-users").hidden = (ROLE!=="admin");
+  $("tablink-settings").hidden = (ROLE!=="admin");
+  showTab("playlist");
+}
+function doLogin(){
+  api("api/auth.php?action=login", {method:"POST", body: JSON.stringify({login:$("l_login").value, password:$("l_pass").value})})
+    .then(function(r){ CSRF=r.csrf; enterApp(r.user, r.role); })
+    .catch(function(e){ $("l_err").textContent=e.message; });
+}
+function doLogout(){
+  api("api/auth.php?action=logout", {method:"POST", body:"{}"}).then(function(){ location.reload(); });
+}
+
+// ---------- вкладки ----------
+function showTab(name){
+  ["playlist","videos","specials","settings","users","logs"].forEach(function(t){
+    $("tab-"+t).hidden = (t!==name);
+    var links=document.querySelectorAll("nav.topbar a[data-tab]");
+    for (var i=0;i<links.length;i++) links[i].className = (links[i].getAttribute("data-tab")===name)?"active":"";
+  });
+  if (name==="playlist") loadSequence();
+  if (name==="videos") loadVideos();
+  if (name==="specials") loadSpecials();
+  if (name==="settings") loadSettings();
+  if (name==="users") loadUsers();
+  if (name==="logs") loadLogs();
+}
+
+// ---------- плейлист ----------
+function loadSequence(){
+  if (!videosCache.length) api("api/videos.php?action=list").then(function(vs){ videosCache=vs; }).catch(function(){});
+  api("api/playlist.php?action=now").then(function(n){
+    var h="", c=n.current;
+    function titleFor(file){ var v=videosCache.filter(function(x){return x.file===file;})[0]; return v?v.title:file; }
+    if (n.mode==="sanitary") {
+      var sv = n.sanitary_video || {};
+      h+="<p><span class='badge b-queued'>САНИТАРНЫЙ ДЕНЬ</span> Играет только ролик <b>"+esc(sv.title||titleFor(c.Playlist[0]||""))+"</b> ("+esc(c.Playlist[0]||"")+"), watchdog "+c.GeneralWatchdog+" мин</p>";
+    }
+    else if (n.mode==="tech") {
+      var f = c.Playlist[0]||"";
+      h+="<p><span class='badge b-error'>ТЕХНИЧЕСКОЕ ЗАКРЫТИЕ</span> Играет только ролик <b>"+esc(titleFor(f))+"</b> ("+esc(f)+")"+
+         ((n.tech&&n.tech.splash_video===f)?"":" — назначенный заставки нет, используется резервная")+"</p>";
+    }
+    else if (!c.Playlist.length) h+="<p><span class='badge b-inactive'>ПУСТО</span> Нет активных роликов — проверьте расписание.</p>";
+    else h+="<p>Сейчас в ротации: <b>основных "+n.main.length+"</b>, <b>дополнительных "+n.additional.length+"</b>. Следующий показ: <b>"+esc(c.Playlist[0]||"∅")+"</b> (watchdog "+c.GeneralWatchdog+" мин)</p>";
+    function listBlock(title, arr, cls){
+      if (!arr || !arr.length) return "";
+      var s="<h5>"+title+"</h5><ol class='playlist'>";
+      arr.forEach(function(it){
+        s+="<li class='"+cls+"'><span><b>"+esc(it.title)+"</b><br><span class='pl-meta'>"+esc(it.file)+" · "+esc(it.periods.map(function(p){return p.start+" — "+p.end;}).join("; "))+"</span></span></li>";
+      });
+      return s+"</ol>";
+    }
+    h+=listBlock("Основные ролики (по порядку)", n.main, "");
+    h+=listBlock("Дополнительные ролики (выбираются случайно)", n.additional, "pl-add");
+    $("pl_now").innerHTML=h;
+  }).catch(function(e){toast(e.message);});
+
+  var at = $("pl_at").value ? $("pl_at").value.replace("T"," ") : "";
+  var url = "api/playlist.php?action=sequence&count="+$("pl_count").value + (at?("&at="+encodeURIComponent(at)):"");
+  api(url).then(function(d){
+    var h="", t=new Date(d.at.replace(" ","T"));
+    d.items.forEach(function(it){
+      var cls = it.kind==="sanitary"?"pl-sanitary":(it.kind==="tech"?"pl-tech":(it.kind==="additional"?"pl-add":""));
+      var lbl = it.kind==="sanitary"?"санитарный день":(it.kind==="tech"?"техзакрытие":(it.kind==="additional"?"дополнительный":(it.kind==="empty"?"пусто":"основной")));
+      h += "<li class='"+cls+"'><span class='pl-time'>"+("0"+t.getHours()).slice(-2)+":"+("0"+t.getMinutes()).slice(-2)+"</span>"+
+           "<span><b>"+esc(it.title||"∅")+"</b> <span class='pl-meta'>["+lbl+", "+it.watchdog+" мин]</span>"+
+           "<br><span class='pl-meta'>"+esc(it.file||"")+"</span></span></li>";
+      t = new Date(t.getTime() + it.watchdog*60000);
+    });
+    $("pl_seq").innerHTML=h||"<li>пусто</li>";
+  }).catch(function(e){toast(e.message);});
+}
+
+// ---------- ролики и их расписание ----------
+var pollTimer = null;
+function loadVideos(){
+  api("api/videos.php?action=list").then(function(vs){
+    videosCache = vs;
+    renderVideos();
+    managePolling();
+  });
+}
+function managePolling(){
+  var pending = videosCache.some(function(v){ return (v.status||"ready")!=="ready"; });
+  if (pending && !pollTimer) {
+    pollTimer = setInterval(refreshStatuses, 3000);
+    refreshStatuses();
+  } else if (!pending && pollTimer) {
+    clearInterval(pollTimer); pollTimer = null;
+  }
+}
+function refreshStatuses(){
+  api("api/videos.php?action=status").then(function(d){
+    var changed = false;
+    (d.pending||[]).forEach(function(p){
+      for (var i=0;i<videosCache.length;i++){
+        if (videosCache[i].id===p.id && videosCache[i].status!==p.status){ videosCache[i].status=p.status; changed=true; }
+      }
+    });
+    // если очередь пуста и ничего не pending — перечитаем список (worker обновил duration/файл)
+    var queueLeft = (d.queue||[]).length;
+    var pendLeft = (d.pending||[]).length;
+    if (!queueLeft && !pendLeft) {
+      clearInterval(pollTimer); pollTimer=null;
+      loadVideos();
+      if ($("tab-specials") && !$("tab-specials").hidden) loadSpecials();
+    } else {
+      if (changed) renderVideos();
+      if ($("tab-specials") && !$("tab-specials").hidden) paintTechRows();
+    }
+  }).catch(function(){ /* сервер недоступен — попробуем на следующем тике */ });
+}
+function renderVideos(){
+  var f = ($("v_filter").value||"").toLowerCase();
+  var onlyActive = $("v_only_active").checked;
+  var onlyInactive = $("v_only_inactive").checked;
+  if (onlyActive && onlyInactive) onlyInactive = false; // взаимоисключающие фильтры
+  var vs = videosCache.filter(function(v){
+    if (f && (v.title+" "+v.file).toLowerCase().indexOf(f)<0) return false;
+    if (onlyActive && !isActiveNow(v)) return false;
+    if (onlyInactive && isActiveNow(v)) return false;
+    return true;
+  });
+  $("v_summary").textContent = "Показано "+vs.length+" из "+videosCache.length;
+  $("v_rows").innerHTML = vs.map(function(v){
+    var per = (v.schedule||[]).map(function(p){
+      var act = isActiveNow(v);
+      return "<li>"+esc(p.start)+" — "+esc(p.end)+"</li>";
+    }).join("");
+    var nPer=(v.schedule||[]).length;
+    return "<tr>"+
+      "<td><input value=\""+esc(v.title)+"\" data-id=\""+v.id+"\" class=\"t-in\"></td>"+
+      "<td>"+esc(v.file)+"</td>"+
+      "<td><select data-id=\""+v.id+"\" class=\"type-sel\"><option value=\"main\""+(v.type==="main"?" selected":"")+">Основной</option><option value=\"additional\""+(v.type==="additional"?" selected":"")+">Доп.</option><option value=\"splash\""+(v.type==="splash"?" selected":"")+">Заставка</option></select>"+
+        (v.splash_role?" <span class='muted'>"+(v.splash_role==="splash_weekday"?"сан. день":"техзакрытие")+"</span>":"")+"</td>"+
+      "<td><span class='badge b-"+v.status+"'>"+v.status+"</span>"+(v.error?" <span class='muted'>"+esc(v.error)+"</span>":"")+"</td>"+
+      "<td>"+fmtDur(v.duration)+"</td>"+
+      "<td>"+(nPer? "<span class='badge "+(isActiveNow(v)?"b-active'>активен</span>":"b-inactive'>не активен</span>") : "<span class='badge b-inactive'>нет периодов</span>")+" <ul class='per-list'>"+per+"</ul>"+
+        " <button class='small secondary' onclick=\"openSched('"+v.id+"')\">"+(nPer?"Изменить периоды":"＋ Периоды")+"</button></td>"+
+      "<td><button class='secondary small' onclick=\"saveVideoById('"+v.id+"')\">Сохранить</button> <button class='danger small' onclick=\"delVideo('"+v.id+"')\">✕</button></td>"+
+    "</tr>";
+  }).join("");
+}
+function saveVideoById(id){
+  var titleInp = document.querySelector('.t-in[data-id="'+id+'"]');
+  var typeSel  = document.querySelector('.type-sel[data-id="'+id+'"]');
+  api("api/videos.php?action=update", {method:"POST", body: JSON.stringify({id:id, title:titleInp.value, type:typeSel.value})})
+    .then(function(){ toast("Сохранено"); loadVideos(); })
+    .catch(function(e){toast(e.message);});
+}
+function delVideo(id){
+  if(!confirm("Удалить ролик и файл?")) return;
+  api("api/videos.php?action=delete", {method:"POST", body: JSON.stringify({id:id})})
+    .then(function(){ toast("Удалено"); loadVideos(); })
+    .catch(function(e){toast(e.message);});
+}
+var IMAGE_EXT = ["jpg","jpeg","png","webp","bmp","gif"];
+function isImageName(n){ return IMAGE_EXT.indexOf((n||"").split(".").pop().toLowerCase())>=0; }
+function onUploadFilePick(){
+  var f = $("v_file").files[0];
+  if (!f) { $("v_duration_wrap").hidden = true; return; }
+  if (isImageName(f.name)) {
+    // загружено изображение — спрашиваем, в видео какой длительности его конвертировать
+    $("v_duration_wrap").hidden = false;
+    fetch("api/settings.php?action=get", {credentials:"same-origin"}).then(function(r){return r.json();}).then(function(d){
+      if (d && d.settings && d.settings.duration_image) $("v_duration").value = d.settings.duration_image;
+    }).catch(function(){});
+    $("v_upload_hint").textContent = "Выбрано изображение \u201c"+f.name+"\u201d. Укажите длительность будущего mp4-ролика и нажмите «Загрузить и конвертировать».";
+  } else {
+    $("v_duration_wrap").hidden = true;
+    $("v_upload_hint").textContent = "Файл \u201c"+f.name+"\u201d будет сконвертирован в mp4 с текущими настройками конвертера.";
+  }
+}
+function uploadVideo(){
+  var f = $("v_file").files[0];
+  if (!f) { toast("Сначала выберите файл (видео или изображение)"); return; }
+  var fd = new FormData();
+  fd.append("file", f, f.name);
+  fd.append("title", $("v_title").value || f.name.replace(/\.[^.]+$/,""));
+  fd.append("type", $("v_type").value);
+  if (isImageName(f.name)) fd.append("duration", $("v_duration").value || "60");
+  fetch("api/videos.php?action=upload", {method:"POST", headers:{"X-CSRF-Token":CSRF}, body:fd, credentials:"same-origin"})
+    .then(function(r){return r.text().then(function(t){
+      var j=null; try{ j=JSON.parse(t); }catch(e){}
+      if (!r.ok) throw new Error(j && j.error ? j.error : ("Ошибка сервера "+r.status+": "+t.slice(0,200)));
+      return j;
+    });})
+    .then(function(){ toast("Загружено, конвертация в mp4 в очереди…"); $("v_file").value=""; loadVideos(); setTimeout(loadVideos, 10000); })
+    .catch(function(e){ admin_log_js("upload_error", e.message); toast(e.message); });
+}
+function admin_log_js(action,msg){ /* клиентские ошибки тоже видны в консоли */ console.error("[admin]", action, msg); }
+
+// --- диалог периодов ролика ---
+var schedVideoId = null;
+function openSched(id){
+  schedVideoId = id;
+  var v = videosCache.find(function(x){return x.id===id;});
+  if (!v) return;
+  $("sd_title").textContent = "Расписание ролика: "+v.title;
+  $("sd_info").textContent = "Файл: "+v.file+" · тип: "+(v.type==="main"?"основной":"дополнительный");
+  renderSchedRows(v.schedule||[]);
+  $("ns_start").value=""; $("ns_end").value="";
+  $("schedDlg").showModal();
+}
+function renderSchedRows(schedule){
+  $("sd_rows").innerHTML = schedule.map(function(p){
+    return "<tr>"+
+      "<td><input type=\"datetime-local\" value=\""+p.start.replace(" ","T")+"\" data-pid=\""+p.id+"\" data-f=\"start\"></td>"+
+      "<td><input type=\"datetime-local\" value=\""+p.end.replace(" ","T")+"\" data-pid=\""+p.id+"\" data-f=\"end\"></td>"+
+      "<td><button class='small' onclick=\"sdUpdate('"+p.id+"')\">✓</button> "+
+      "<button class='danger small' onclick=\"sdDelete('"+p.id+"')\">✕</button></td></tr>";
+  }).join("") || "<tr><td colspan=3 class='muted'>Периодов пока нет — добавьте первый ниже</td></tr>";
+}
+function sdRefresh(){ api("api/videos.php?action=periods&id="+schedVideoId).then(function(d){
+  var v = videosCache.find(function(x){return x.id===schedVideoId;});
+  if (v) v.schedule = d.schedule;
+  renderSchedRows(d.schedule); renderVideos();
+});}
+function sdAdd(){
+  var s=$("ns_start").value, e=$("ns_end").value;
+  if (!s||!e) { toast("Укажите начало и окончание"); return; }
+  api("api/videos.php?action=period-add", {method:"POST", body: JSON.stringify({id:schedVideoId, start:s.replace("T"," "), end:e.replace("T"," ")})})
+    .then(function(){ $("ns_start").value=""; $("ns_end").value=""; sdRefresh(); toast("Период добавлен"); })
+    .catch(function(e2){toast(e2.message);});
+}
+function sdUpdate(pid){
+  var si=document.querySelector('#sd_rows input[data-pid="'+pid+'"][data-f="start"]');
+  var ei=document.querySelector('#sd_rows input[data-pid="'+pid+'"][data-f="end"]');
+  api("api/videos.php?action=period-update", {method:"POST", body: JSON.stringify({id:schedVideoId, periodId:pid, start:si.value.replace("T"," "), end:ei.value.replace("T"," ")})})
+    .then(sdRefresh).catch(function(e){toast(e.message);});
+}
+function sdDelete(pid){
+  if(!confirm("Удалить период?")) return;
+  api("api/videos.php?action=period-delete", {method:"POST", body: JSON.stringify({id:schedVideoId, periodId:pid})})
+    .then(sdRefresh).catch(function(e){toast(e.message);});
+}
+
+// ---------- особые дни ----------
+var weekdaySplashId = null; // id ролика-заставки санитарного дня недели (для замены файла)
+function loadSpecials(){
+  api("api/specials.php?action=get").then(function(s){
+    specialsCache = s;
+    $("wd_day").value = s.weekday_sanitary.weekday;
+    $("wd_enabled").checked = !!s.weekday_sanitary.enabled;
+    $("wp_list").innerHTML = (s.weekday_periods||[]).map(function(p){
+      return "<li>"+esc(p.start)+" — "+esc(p.end)+
+        " <button class='danger small' onclick=\"delWeekdayPeriod('"+p.id+"')\">✕</button></li>";
+    }).join("") || "<li class='muted'>нет периодов — санитарные дни по дню недели не действуют</li>";
+    // карточка ролика санитарного дня — из кэша библиотеки (заодно подтянем, если ещё не загружен)
+    var afterVideos = function(){ showWdSplashInfo(); paintTechRows(s); };
+    if (!videosCache.length) {
+      api("api/videos.php?action=list").then(function(vs){ videosCache=vs; afterVideos(); });
+    } else { afterVideos(); }
+    $("tp_rows").innerHTML = "";
+    // выпадающий список заставок техзакрытия + новый период
+    var opts = (s.tech_splashes||[]).map(function(v){
+      return "<option value='"+v.id+"'>"+esc(v.title)+" ("+esc(v.file)+")</option>";
+    }).join("");
+    $("tp_new_splash").innerHTML = "<option value=''>— без ролика (по резервной mp4-заставке) —</option>" + opts;
+  }).catch(function(e){toast(e.message);});
+}
+// Отрисовка строк техзакрытий; статус берём из videosCache (актуален при живом опросе очереди)
+function paintTechRows(s){
+  if (!s) s = specialsCache;
+  if (!s) return;
+  var byId = {};
+  videosCache.forEach(function(v){ byId[v.id]=v; });
+  $("tp_rows").innerHTML = (s.tech_periods||[]).map(function(t){
+    var sel = (s.tech_splashes||[]).map(function(v){
+      return "<option value='"+v.id+"'"+(t.splash_video===v.file?" selected":"")+">"+esc(v.title)+" ("+esc(v.file)+")</option>";
+    }).join("");
+    // определённый id ролика по файлу
+    var vidSel = document.querySelector('.tp-sel[data-id="'+t.id+'"]');
+    var chosenId = vidSel ? vidSel.value : "";
+    var linked = null;
+    (s.tech_splashes||[]).forEach(function(v){ if (v.file===t.splash_video) linked=v; });
+    var rv = (chosenId && byId[chosenId]) || linked;
+    var st = rv ? rv.status : (t.splash_video ? "файл вне библиотеки" : "не назначен");
+    var badgeCls = rv ? ("b-"+rv.status) : "b-inactive";
+    return "<tr>"+
+      "<td><input type='datetime-local' class='tp-start' data-id='"+t.id+"' value='"+(t.start||"").replace(" ","T")+"'></td>"+
+      "<td><input type='datetime-local' class='tp-end' data-id='"+t.id+"' value='"+(t.end||"").replace(" ","T")+"'></td>"+
+      "<td><select class='tp-sel' data-id='"+t.id+"' style='max-width:230px'><option value=''>— не назначен —</option>"+sel+"</select>"+
+      " <input type='file' class='tp-file' data-id='"+t.id+"' style='max-width:170px' accept='video/*,image/*,.mp4'>"+
+      " <button class='small secondary' title='Загрузить новый ролик-заставку (конвертируется в mp4 и будет назначен периоду)' onclick=\"uploadTechFile('"+t.id+"')\">⬆</button></td>"+
+      "<td><span class='badge "+badgeCls+"'>"+esc(st)+"</span></td>"+
+      "<td><button class='small' title='Сохранить период' onclick=\"saveTechRow('"+t.id+"')\">💾</button> "+
+      "<button class='danger small' onclick=\"delTech('"+t.id+"')\">✕</button></td></tr>";
+  }).join("") || "<tr><td colspan='5' class='muted'>Периодов техзакрытия нет</td></tr>";
+}
+function showWdSplashInfo(){
+  var w = videosCache.filter(function(v){return v.splash_role==="splash_weekday";})[0];
+  weekdaySplashId = w ? w.id : null;
+  if (w) {
+    $("sd_title").placeholder = w.title;
+    $("sd_info").innerHTML = "Текущий ролик: <b>"+esc(w.title)+"</b> · файл <code>"+esc(w.file)+
+      "</code> · статус <span class='badge b-"+w.status+"'>"+w.status+"</span>"+
+      (w.error? " <span class='muted'>"+esc(w.error)+"</span>":"");
+    managePolling();
+  } else {
+    $("sd_info").innerHTML = "<span class='badge b-error'>не загружен</span> Загрузите mp4-заставку «санитарный день» — она будет показываться в выбранный день недели.";
+  }
+}
+function uploadSplash(role){
+  var inp = role==="splash_weekday" ? $("sd_file") : null;
+  if (!inp) return;
+  var f = inp.files[0];
+  if (!f) { toast("Сначала выберите видеофайл или изображение"); return; }
+  var fd = new FormData();
+  fd.append("file", f, f.name);
+  fd.append("title", $("sd_title").value || "Санитарный день");
+  fd.append("type", "splash");
+  fd.append("splash_role", role);
+  if (isImageName(f.name)) {
+    var d = prompt("Изображение будет сконвертировано в видео. Длительность ролика в секундах:", "60");
+    if (d === null) return;
+    d = parseInt(d,10); if (!d || d<3) d=3; if (d>3600) d=3600;
+    fd.append("duration", String(d));
+  }
+  fetch("api/videos.php?action=upload", {method:"POST", headers:{"X-CSRF-Token":CSRF}, body:fd, credentials:"same-origin"})
+    .then(function(r){return r.text().then(function(t){
+      var j=null; try{ j=JSON.parse(t); }catch(e){}
+      if (!r.ok) throw new Error(j && j.error ? j.error : ("Ошибка сервера "+r.status+": "+t.slice(0,200)));
+      return j;
+    });})
+    .then(function(){ toast("Заставка загружена, конвертация в mp4 в очереди…"); inp.value=""; loadVideos(); loadSpecials(); })
+    .catch(function(e){ admin_log_js("splash_upload_error", e.message); toast(e.message); });
+}
+function addTech(){
+  var s=$("tp_start").value, e=$("tp_end").value;
+  if (!s||!e) { toast("Укажите начало и окончание периода"); return; }
+  api("api/specials.php?action=tech-save", {method:"POST", body: JSON.stringify({start:s.replace("T"," "), end:e.replace("T"," "), video_id:$("tp_new_splash").value})})
+    .then(function(){ $("tp_start").value=""; $("tp_end").value=""; $("tp_new_splash").value=""; loadSpecials(); toast("Период добавлен"); })
+    .catch(function(e2){toast(e2.message);});
+}
+function saveTechRow(id){
+  var si=document.querySelector('.tp-start[data-id="'+id+'"]');
+  var ei=document.querySelector('.tp-end[data-id="'+id+'"]');
+  var se=document.querySelector('.tp-sel[data-id="'+id+'"]');
+  if (!si.value || !ei.value) { toast("Укажите даты периода"); return; }
+  api("api/specials.php?action=tech-save", {method:"POST", body: JSON.stringify({
+    id:id, start:si.value.replace("T"," "), end:ei.value.replace("T"," "),
+    video_id:se ? se.value : ""
+  })}).then(function(){ toast("Период сохранён"); loadSpecials(); }).catch(function(e){toast(e.message);});
+}
+function uploadTechFile(id){
+  var inp=document.querySelector('.tp-file[data-id="'+id+'"]');
+  if (!inp || !inp.files[0]) { toast("Выберите видеофайл заставки"); return; }
+  var f=inp.files[0];
+  var title = prompt("Название нового ролика-заставки:", fileBaseName(f.name));
+  if (title === null) return;
+  var fd = new FormData();
+  fd.append("file", f, f.name);
+  fd.append("title", title || "Техническое закрытие");
+  fd.append("type", "splash");
+  fd.append("splash_role", "splash_tech");
+  if (isImageName(f.name)) {
+    // загружено изображение — спрашиваем длительность будущего mp4
+    var def = 60;
+    var d = prompt("Изображение будет сконвертировано в видео. Укажите длительность ролика в секундах:", String(def));
+    if (d === null) return;
+    d = parseInt(d,10); if (!d || d<3) d=3; if (d>3600) d=3600;
+    fd.append("duration", String(d));
+  }
+  fetch("api/videos.php?action=upload", {method:"POST", headers:{"X-CSRF-Token":CSRF}, body:fd, credentials:"same-origin"})
+    .then(function(r){return r.text().then(function(t){
+      var j=null; try{ j=JSON.parse(t); }catch(e){}
+      if (!r.ok) throw new Error(j && j.error ? j.error : ("Ошибка сервера "+r.status+": "+t.slice(0,200)));
+      return j;
+    });})
+    .then(function(j){
+      // назначить созданный ролик периоду (период остаётся, даже пока ролик в очереди)
+      var si=document.querySelector('.tp-start[data-id="'+id+'"]');
+      var ei=document.querySelector('.tp-end[data-id="'+id+'"]');
+      return api("api/specials.php?action=tech-save", {method:"POST", body: JSON.stringify({
+        id:id, start:si.value.replace("T"," "), end:ei.value.replace("T"," "), video_id:j.video.id
+      })});
+    })
+    .then(function(){ toast("Файл загружен, конвертация в mp4 в очереди…"); loadVideos(); loadSpecials(); setTimeout(loadSpecials, 10000); })
+    .catch(function(e){ admin_log_js("tech_upload_error", e.message); toast(e.message); });
+}
+function fileBaseName(n){ return String(n||"").replace(/\.[^.]+$/,""); }
+
+function delTech(id){
+  if(!confirm("Удалить период техзакрытия?")) return;
+  api("api/specials.php?action=tech-delete", {method:"POST", body: JSON.stringify({id:id})}).then(loadSpecials);
+}
+
+// ---------- настройки конвертера (только администраторы) ----------
+function loadSettings(){
+  api("api/settings.php?action=get").then(function(d){
+    var s=d.settings;
+    ["resolution","vcodec","pix_fmt","profile","level","preset_speed","bitrate","maxrate","bufsize","acodec","abitrate","duration_image"].forEach(function(k){
+      var el=$("st_"+k); if (el) el.value = (s[k]===null||s[k]===undefined)?"":s[k];
+    });
+    $("st_crf").value = (s.crf===null||s.crf===undefined)?"":s.crf;
+    $("st_prev_video").textContent = d.preview_video;
+    $("st_prev_image").textContent = d.preview_image;
+    $("st_php").textContent = "php.ini: upload_max_filesize="+d.php.upload_max_filesize+", post_max_size="+d.php.post_max_size+
+      "; лимит приложения: "+Math.round(d.max_upload_size/1024/1024)+" МБ";
+  }).catch(function(e){toast(e.message);});
+}
+function saveSettings(){
+  var body={};
+  ["resolution","vcodec","pix_fmt","profile","level","preset_speed","crf","bitrate","maxrate","bufsize","acodec","abitrate","duration_image"].forEach(function(k){
+    body[k]=$("st_"+k).value.trim();
+  });
+  api("api/settings.php?action=save", {method:"POST", body: JSON.stringify(body)}).then(function(d){
+    toast("Настройки сохранены");
+    $("st_prev_video").textContent = d.preview_video;
+    $("st_prev_image").textContent = d.preview_image;
+  }).catch(function(e){toast(e.message);});
+}
+function saveWeekday(){
+  api("api/specials.php?action=weekday-set", {method:"POST", body: JSON.stringify({weekday:+$("wd_day").value, enabled:$("wd_enabled").checked})})
+    .then(function(){toast("Сохранено");});
+}
+function addWeekdayPeriod(){
+  var s=$("wp_start").value, e=$("wp_end").value;
+  if (!s||!e) { toast("Укажите начало и окончание периода"); return; }
+  api("api/specials.php?action=weekday-period-save", {method:"POST", body: JSON.stringify({start:s, end:e})})
+    .then(function(){ $("wp_start").value=""; $("wp_end").value=""; loadSpecials(); toast("Период добавлен"); })
+    .catch(function(e2){toast(e2.message);});
+}
+function delWeekdayPeriod(id){
+  if(!confirm("Удалить период действия санитарных дней?")) return;
+  api("api/specials.php?action=weekday-period-delete", {method:"POST", body: JSON.stringify({id:id})})
+    .then(loadSpecials).catch(function(e){toast(e.message);});
+}
+
+// ---------- пользователи ----------
+function loadUsers(){
+  api("api/users.php?action=list").then(function(us){
+    $("u_rows").innerHTML = us.map(function(u){
+      return "<tr><td>"+esc(u.login)+"</td>"+
+        "<td><select data-login=\""+esc(u.login)+"\" class=\"role-sel\">"+
+          "<option value=\"editor\""+(u.role==="editor"?" selected":"")+">Редактор</option>"+
+          "<option value=\"admin\""+(u.role==="admin"?" selected":"")+">Администратор</option></select></td>"+
+        "<td>"+esc(u.created||"")+"</td>"+
+        "<td><button class='small' onclick=\"setRole('"+esc(u.login)+"')\">Сохранить роль</button> "+
+        "<button class='small secondary' onclick=\"openPassDlg('"+esc(u.login)+"',true)\">Пароль…</button> "+
+        "<button class='danger small' onclick=\"delUser('"+esc(u.login)+"')\">✕</button></td></tr>";
+    }).join("");
+  }).catch(function(e){toast(e.message);});
+}
+function addUser(){
+  api("api/users.php?action=add", {method:"POST", body: JSON.stringify({login:$("nu_login").value, password:$("nu_pass").value, role:$("nu_role").value})})
+    .then(function(){ toast("Пользователь создан"); $("nu_login").value=""; $("nu_pass").value=""; loadUsers(); })
+    .catch(function(e){toast(e.message);});
+}
+function setRole(login){
+  var sel=document.querySelector('.role-sel[data-login="'+login+'"]');
+  api("api/users.php?action=set-role", {method:"POST", body: JSON.stringify({login:login, role:sel.value})})
+    .then(function(){toast("Роль сохранена");}).catch(function(e){toast(e.message);});
+}
+function delUser(login){
+  if(!confirm("Удалить пользователя "+login+"?")) return;
+  api("api/users.php?action=delete", {method:"POST", body: JSON.stringify({login:login})})
+    .then(function(){toast("Удалено"); loadUsers();}).catch(function(e){toast(e.message);});
+}
+function openPassDlg(login, byAdmin){
+  login = login || "";
+  $("cp_login").value = login;
+  $("cp_login").disabled = !!byAdmin;
+  // обычный пользователь всегда подтверждает текущим паролем; админ при смене чужого пароля — нет
+  var needCurrent = !(ROLE==="admin" && login && login!==ME);
+  $("cp_current").parentElement.hidden = !needCurrent;
+  $("cp_new").value=""; $("cp_current").value="";
+  $("passDlg").showModal();
+}
+function changePassword(){
+  var body = {login: $("cp_login").value || undefined, new_password: $("cp_new").value};
+  if (!$("cp_current").parentElement.hidden) body.current_password = $("cp_current").value;
+  api("api/users.php?action=set-password", {method:"POST", body: JSON.stringify(body)})
+    .then(function(){ $("passDlg").close(); toast("Пароль изменён"); })
+    .catch(function(e){toast(e.message);});
+}
+
+// ---------- журнал ----------
+function loadLogs(){
+  api("api/logs.php?action=list").then(function(ls){
+    $("log_rows").innerHTML = ls.slice().reverse().map(function(l){
+      return "<pre class='logline'>"+esc(l.ts)+" ["+esc(l.user)+"@"+esc(l.ip)+"] "+esc(l.action)+" "+esc(JSON.stringify(l.details))+"</pre>";
+    }).join("") || "<i>пусто</i>";
+  });
+}
+
+boot();
+</script>
+</body>
+</html>

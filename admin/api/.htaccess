@@ -1,0 +1,6 @@
+# Лимиты загрузки больших видеофайлов для Apache/mod_php.
+# Для php-fpm задайте эти же значения в пуле (php_admin_value) или .user.ini.
+php_value upload_max_filesize 2G
+php_value post_max_size 2100M
+php_value max_execution_time 0
+php_value memory_limit 512M

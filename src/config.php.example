@@ -1,0 +1,51 @@
+<?php
+// Скопируйте этот файл в config.php и укажите свои значения.
+// config.php не должен попадать в git (см. .gitignore).
+
+return [
+    // Путь к ffmpeg/ffprobe на сервере Ubuntu
+    'ffmpeg_bin'  => '/usr/bin/ffmpeg',
+    'ffprobe_bin' => '/usr/bin/ffprobe',
+
+    // Часовой пояс (важно для расписания!)
+    'timezone' => 'Europe/Moscow',
+
+    /**
+     * Настройки конвертера по умолчанию (редактируются в админке: «Настройки»).
+     * Значения ниже соответствуют текущему windows-скрипту:
+     *   ffmpeg -i IN -s 1280x720 -c:v libx264 -pix_fmt yuv420p -profile:v baseline -level 1.3 -y OUT.mp4
+     * Эти значения используются, если файл data/settings.json отсутствует.
+     */
+    'convert_defaults' => [
+        'resolution'     => '1280x720',
+        'vcodec'         => 'libx264',
+        'pix_fmt'        => 'yuv420p',
+        'profile'        => 'baseline',
+        'level'          => '1.3',
+        'preset_speed'   => 'medium',      // пресет скорости x264 (ultrafast..veryslow)
+        'crf'            => null,          // пустое = использовать битрейт ниже
+        'bitrate'        => '2500k',       // видеобитрейт (если crf не задан)
+        'maxrate'        => '',            // напр. '3000k' (опционально)
+        'bufsize'        => '',            // напр. '5000k' (опционально)
+        'acodec'         => 'aac',
+        'abitrate'       => '128k',
+        'duration_image' => 60,            // сек, длительность ролика из изображения (по умолчанию 1 минута)
+    ],
+
+    // Разрешённые расширения загружаемых файлов
+    'allowed_video_extensions' => ['mp4','mov','avi','mkv','webm','mts','wmv','flv','mpg','mpeg','m4v','3gp'],
+    'allowed_image_extensions' => ['jpg','jpeg','png','webp','bmp','gif'],
+
+    // Максимальный размер загрузки, байт
+    'max_upload_size' => 2 * 1024 * 1024 * 1024,
+
+    // Резервные файлы заставок (модель v3: заставки — обычные ролики type=splash
+    // с собственным расписанием; эти пути используются только если ролик-заставка не найден)
+    'splashes' => [
+        'sanitary' => ['file' => 's_day.mp4'],
+        'tech'     => ['file' => 'tech.mp4'],
+    ],
+
+    // Watchdog: round(duration_min + 1.5), минимум 3 — как в старом playlist.php
+    'watchdog_default' => 3,
+];

@@ -1,0 +1,344 @@
+[
+    {
+        "id": "migrated-1",
+        "title": "1_Про аквапарк",
+        "slug": "1",
+        "file": "1.mp4",
+        "type": "main",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "df80e8de4ede1dca",
+                "start": "2000-01-01 00:00",
+                "end": "2099-12-31 23:30"
+            }
+        ]
+    },
+    {
+        "id": "migrated-2_relaxzone_072023",
+        "title": "2_RelaxZone_072023",
+        "slug": "2_relaxzone_072023",
+        "file": "2_RelaxZone_072023.mp4",
+        "type": "main",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "11979591df484df3",
+                "start": "2000-01-01 00:00",
+                "end": "2099-12-31 23:30"
+            }
+        ]
+    },
+    {
+        "id": "migrated-3_lost_world_072023",
+        "title": "3_Lost_world_072023",
+        "slug": "3_lost_world_072023",
+        "file": "3_Lost_world_072023.mp4",
+        "type": "main",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "ffa1910552b0c7cb",
+                "start": "2000-01-01 00:00",
+                "end": "2099-12-31 23:30"
+            }
+        ]
+    },
+    {
+        "id": "migrated-4_rules",
+        "title": "4_Rules",
+        "slug": "4_rules",
+        "file": "4_Rules.mp4",
+        "type": "main",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "5580eda3afb1dbf9",
+                "start": "2000-01-01 00:00",
+                "end": "2099-12-31 23:30"
+            }
+        ]
+    },
+    {
+        "id": "migrated-5_whatchplace_072023",
+        "title": "5_Whatchplace_072023",
+        "slug": "5_whatchplace_072023",
+        "file": "5_Whatchplace_072023.mp4",
+        "type": "main",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "1058f9da038c71b5",
+                "start": "2000-01-01 00:00",
+                "end": "2099-12-31 23:30"
+            }
+        ]
+    },
+    {
+        "id": "migrated-6_dinobar",
+        "title": "6_Dinobar",
+        "slug": "6_dinobar",
+        "file": "6_Dinobar.mp4",
+        "type": "main",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "697f56f4f6b936d9",
+                "start": "2000-01-01 00:00",
+                "end": "2099-12-31 23:30"
+            }
+        ]
+    },
+    {
+        "id": "migrated-giftcards29042022",
+        "title": "giftcards29042022",
+        "slug": "giftcards29042022",
+        "file": "giftcards29042022.mp4",
+        "type": "main",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "e18caedcb7d823e7",
+                "start": "2000-01-01 00:00",
+                "end": "2099-12-31 23:30"
+            }
+        ]
+    },
+    {
+        "id": "migrated-08_animationprogram072022",
+        "title": "08_Animationprogram072022",
+        "slug": "08_animationprogram072022",
+        "file": "08_Animationprogram072022.mp4",
+        "type": "main",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "7b750e527d377a85",
+                "start": "2000-01-01 00:00",
+                "end": "2099-12-31 23:30"
+            }
+        ]
+    },
+    {
+        "id": "migrated-09_lounge_tv",
+        "title": "09_lounge_tv",
+        "slug": "09_lounge_tv",
+        "file": "09_lounge_tv.mp4",
+        "type": "main",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "c0d21f5b406c80b8",
+                "start": "2000-01-01 00:00",
+                "end": "2099-12-31 23:30"
+            }
+        ]
+    },
+    {
+        "id": "migrated-khalva20220511",
+        "title": "khalva20220511",
+        "slug": "khalva20220511",
+        "file": "khalva20220511.mp4",
+        "type": "additional",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "43cf70ac6c4a5c59",
+                "start": "2025-02-28 00:00",
+                "end": "2029-12-31 22:00"
+            }
+        ]
+    },
+    {
+        "id": "migrated-kidsbithday04122021",
+        "title": "kidsbithday04122021",
+        "slug": "kidsbithday04122021",
+        "file": "kidsbithday04122021.mp4",
+        "type": "additional",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "c0edb088a55b44aa",
+                "start": "2026-11-11 00:00",
+                "end": "2026-12-31 22:00"
+            }
+        ]
+    },
+    {
+        "id": "migrated-tech042024",
+        "title": "tech042024",
+        "slug": "tech042024",
+        "file": "tech042024.mp4",
+        "type": "additional",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "3dd1891f2306fcf9",
+                "start": "2024-03-20 00:00",
+                "end": "2024-03-31 22:00"
+            }
+        ]
+    },
+    {
+        "id": "migrated-imidge032025_tv",
+        "title": "imidge032025_tv",
+        "slug": "imidge032025_tv",
+        "file": "imidge032025_tv.mp4",
+        "type": "main",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "03c0a63a1449374e",
+                "start": "2026-11-11 00:00",
+                "end": "2026-12-31 22:00"
+            }
+        ]
+    },
+    {
+        "id": "migrated-giftcards032025",
+        "title": "giftcards032025",
+        "slug": "giftcards032025",
+        "file": "giftcards032025.mp4",
+        "type": "additional",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "c35335bbfb56883f",
+                "start": "2026-11-11 00:00",
+                "end": "2026-12-31 22:00"
+            }
+        ]
+    },
+    {
+        "id": "migrated-tech042025",
+        "title": "tech042025",
+        "slug": "tech042025",
+        "file": "tech042025.mp4",
+        "type": "additional",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "68494680bb7aa7a0",
+                "start": "2025-04-04 22:00",
+                "end": "2025-04-06 22:00"
+            }
+        ]
+    },
+    {
+        "id": "migrated-anketa_062026_tv",
+        "title": "anketa_062026_tv",
+        "slug": "anketa_062026_tv",
+        "file": "anketa_062026_tv.mp4",
+        "type": "additional",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "0c0dc66471e9aab1",
+                "start": "2026-11-11 00:00",
+                "end": "2026-12-31 22:00"
+            }
+        ]
+    },
+    {
+        "id": "migrated-3as2_nov2026_tv",
+        "title": "3as2_nov2026_tv",
+        "slug": "3as2_nov2026_tv",
+        "file": "3as2_nov2026_tv.mp4",
+        "type": "additional",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "001363b2f6ca0936",
+                "start": "2026-11-11 00:00",
+                "end": "2026-12-25 22:00"
+            }
+        ]
+    },
+    {
+        "id": "migrated-childticketasgift_nov2026_tv",
+        "title": "childticketasgift_nov2026_tv",
+        "slug": "childticketasgift_nov2026_tv",
+        "file": "childticketasgift_nov2026_tv.mp4",
+        "type": "additional",
+        "kind": "video",
+        "status": "ready",
+        "duration": null,
+        "created": "2026-11-22T00:00:00+00:00",
+        "migrated": true,
+        "schedule": [
+            {
+                "id": "40e5139a591bcd4f",
+                "start": "2026-11-11 00:00",
+                "end": "2026-12-25 22:00"
+            }
+        ]
+    }
+]
